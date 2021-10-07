@@ -160,7 +160,7 @@ void pipe_stage_mem() {
 		if (cache_access(data_cache, op->mem_addr) == miss)
 			ls_stall_counter = 51;
 
-	if (ls_stall_counter) return;
+	if (ls_stall_counter > 1) return;
 
 	uint32_t val = 0;
 	if (op->is_mem) val = mem_read_32(op->mem_addr & ~3);
@@ -676,12 +676,13 @@ void pipe_stage_fetch() {
 	/* if pipeline is stalled (our output slot is not empty), return */
 	if (pipe.decode_op != NULL) return;
 
-	if (fetch_stall_counter > 0) fetch_stall_counter--;
+	if (fetch_stall_counter) fetch_stall_counter--;
 
 	if (!fetch_stall_counter) {
 		if (cache_access(instruction_cache, pipe.PC) == miss)
 			fetch_stall_counter = 51;
-	} else {
+	}
+	if (fetch_stall_counter > 1) {
 		if (RUN_BIT == 0)
 			pipe.PC += 4; //otherwise, at the end the PC doesnt match
 		return;
