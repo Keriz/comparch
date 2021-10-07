@@ -24,7 +24,7 @@ size_t least_recently_used_policy(Cache *c, const uint16_t set) {
 	}
 }
 
-void update_access_recency(Cache *c, const uint16_t set, const uint16_t way_index) {
+void update_access_recency(Cache *c, const uint16_t set, const size_t way_index) {
 	if (!c) exit(INVALID_POINTER);
 	if (c->sets[set].ways[way_index].recency == 3) return;
 
@@ -84,33 +84,25 @@ Cache_response cache_access(Cache *c, uint32_t addr) {
 	uint32_t set       = (addr >> set_offset) & ((1 << c_log2(c->nb_sets)) - 1);
 	uint16_t way_index = 0;
 
-	uint8_t cached = miss;
-
 	for (size_t i = 0; i < c->associativity; i++) {
 		//already in cache, nothing to do
-		if (c->sets[set].ways[i].tag == tag || !c->sets[set].ways[i].v_flag) {
-			way_index = i;
-			if (!c->sets[set].ways[i].v_flag) {
-				c->sets[set].ways[i].v_flag = 1;
-				c->sets[set].ways[i].tag    = tag;
-				update_access_recency(c, set, way_index);
-				return miss;
-			}
-			cached = hit;
+		way_index = i;
+		if (!c->sets[set].ways[i].v_flag) {
+			c->sets[set].ways[i].v_flag = 1;
+			c->sets[set].ways[i].tag    = tag;
+			update_access_recency(c, set, way_index);
+			return miss;
+		} else if (c->sets[set].ways[i].tag == tag) {
+			update_access_recency(c, set, way_index);
+			return hit;
 		}
 	}
-
-	if (cached == miss) {
-		//increment cycles by 51, if d flag, write back, otherwise just load new memory
-		/* 	if (c->sets[set].ways[way_index].d_flag) {
-		} */
-		size_t lru                 = least_recently_used_policy(c, set);
-		c->sets[set].ways[lru].tag = tag;
-		update_access_recency(c, set, lru);
-		return miss;
-
-	} else if (cached == hit) {
-		update_access_recency(c, set, way_index);
-		return hit;
-	}
+	//if we're here, that's a miss!
+	//increment cycles by 51, if d flag, write back, otherwise just load new memory
+	/* 	if (c->sets[set].ways[way_index].d_flag) {
+	} */
+	size_t lru                 = least_recently_used_policy(c, set); //pick the LRU way in the set, where our new block will be
+	c->sets[set].ways[lru].tag = tag;
+	update_access_recency(c, set, lru);
+	return miss;
 }
