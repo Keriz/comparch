@@ -22,15 +22,14 @@ typedef enum Cache_response
 
 // implentation of a set-associative cache
 typedef struct Cache_line {
-	//uint8_t *data;
-	uint8_t tag; //tag_length = address_length - index_length - block_offset_length
+	uint32_t tag; //tag_length = address_length - index_length - block_offset_length
 	uint8_t d_flag;
 	uint8_t v_flag;
 	uint16_t recency; //for the Least Recently Accessed policy
 } Cache_line;
 
 typedef struct Cache_set {
-	Cache_line *lines;
+	Cache_line *ways;
 } Cache_set;
 
 typedef struct Cache {
