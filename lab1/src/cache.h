@@ -1,8 +1,6 @@
 #ifndef CACHE_H
 #define CACHE_H
 
-#include <stdlib.h>
-
 typedef enum Cache_response
 {
 	miss,
@@ -28,7 +26,7 @@ typedef struct Cache_line {
 	uint8_t tag; //tag_length = address_length - index_length - block_offset_length
 	uint8_t d_flag;
 	uint8_t v_flag;
-	uint16_t lru; //for the Least Recently Accessed policy
+	uint16_t recency; //for the Least Recently Accessed policy
 } Cache_line;
 
 typedef struct Cache_set {
@@ -44,8 +42,9 @@ typedef struct Cache {
 	Cache_set *sets;
 } Cache;
 
-extern Cache instruction_cache, data_cache;
+extern Cache *instruction_cache, *data_cache;
 
-uint32_t cache(Cache *, uint32_t);
+//Returns a pointer to a cache
+Cache *cache_init(uint32_t cache_size, uint32_t block_size, uint8_t associativity);
 Cache_response cache_access(Cache *, uint32_t);
 #endif
