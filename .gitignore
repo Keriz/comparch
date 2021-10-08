@@ -4,3 +4,10 @@ lab1/sim.exe
 lab1/inputs/benchmarking/bm2/*
 lab1/inputs/benchmarking/bm1/*
 lab1/sim
+lab1/task_2/associativity.png
+lab1/task_2/blocksize.png
+lab1/task_2/cachesize.png
+lab1/task_2/exemple_benchmark.png
+lab1/inputs/benchmarking/associativity.png
+lab1/inputs/benchmarking/blocksize.png
+lab1/inputs/benchmarking/cachesize.png
