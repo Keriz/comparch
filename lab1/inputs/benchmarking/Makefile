@@ -19,4 +19,4 @@ as_bench2: $(patsubst %.s,%.x, $(INPUT_BM2))
 	rm $(basename $^).o
 
 run_tests:
-	python run_benchmarks.py
+	python3 run_benchmarks.py
