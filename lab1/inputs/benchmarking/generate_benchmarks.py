@@ -4,46 +4,26 @@ import os
 
 
 def gen_bm_1(name):
-    fn_order = [i + 1 for i in range(9)]
-    random.shuffle(fn_order)
-
-    fn_length = [random.randint(20, 400) for i in range(10)]
-
+    itr = random.randint(10, 2000)
     f = open(name, "w")
-
-    f.write(".text\n")
-
-    for i in range(10):
-        f.write("fn_" + str(i) + ":\n")
-        for j in range(fn_length[i]):
-            f.write("    nop\n")
-        if i != 9:
-            f.write("    beqz $0, fn_" + str(fn_order[i]) + "\n")
-        else:
-            f.write("    addiu $v0, $0, 10\n    syscall\n")
-
+    f.write(".text\n    lui $s0, 0x1000\n    lui $s1, 0x2000\n    addiu $s2, $0, " + hex(itr) +
+            "\nloop:\n    lw $t0, 0($s0)\n    sw $t0, 0($s1)\n    addiu $s0, $s0, 0x4\n    addiu $s1, $s1, 0x4\n  \
+                  addiu $s2, $s2, -1\n    nop\n    nop\n    bnez $s2, loop\n    addiu $v0, $0, 10\n    syscall\n")
     f.close()
 
 
 def gen_bm_2(name):
-    fn_order = [i + 1 for i in range(9)]
-    random.shuffle(fn_order)
-
-    fn_length = [random.randint(20, 400) for i in range(10)]
-
+    itr = random.randint(10, 2000)
+    l_adds = [random.randint(0, itr) for i in range(itr)]
+    s_adds = [random.randint(0, itr) for i in range(itr)]
     f = open(name, "w")
-
-    f.write(".text\n")
-
-    for i in range(10):
-        f.write("fn_" + str(i) + ":\n")
-        for j in range(fn_length[i]):
-            f.write("    nop\n")
-        if i != 9:
-            f.write("    beqz $0, fn_" + str(fn_order[i]) + "\n")
-        else:
-            f.write("    addiu $v0, $0, 10\n    syscall\n")
-
+    f.write(".text\n    lui $s0, 0x1000\n    lui $s1, 0x3000\n")
+    for l_add, s_add in zip(l_adds, s_adds):
+        f.write("    addiu $s2, $s0, " + hex(4*l_add) + "\n")
+        f.write("    lw $t0, 0($s2)\n")
+        f.write("    addiu $s2, $s1, " + hex(4*s_add) + "\n")
+        f.write("    sw $t0, 0($s2)\n")
+    f.write("    addiu $v0, $0, 10\n    syscall\n")
     f.close()
 
 
