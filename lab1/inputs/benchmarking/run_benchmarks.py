@@ -177,11 +177,11 @@ def associativity(bm1_inputs, bm2_inputs):
     averages_b1 = []
     averages_b2 = []
 
-    print(bold + "Testing cache sizes" + normal)
+    print(bold + "Testing associativity sizes" + normal)
     for a in asso:
         averages_b1.append(0)
         averages_b2.append(0)
-        print(red + "   >Testing cache size: " + str(a) + normal)
+        print(red + "   >Testing associativity size: " + str(a) + normal)
         for i in bm1_inputs:
             if not os.path.exists(i):
                 print(red + "ERROR -- input file (*.x) not found: " + i + normal)
@@ -251,9 +251,9 @@ def main():
     bm1_inputs = glob.glob("bm1/*.x")
     bm2_inputs = glob.glob("bm2/*.x")
 
-    #block_size(bm1_inputs, bm2_inputs)
+    block_size(bm1_inputs, bm2_inputs)
     #cache_size(bm1_inputs, bm2_inputs)
-    associativity(bm1_inputs, bm2_inputs)
+    #associativity(bm1_inputs, bm2_inputs)
 
 
 def run(arg, i):
