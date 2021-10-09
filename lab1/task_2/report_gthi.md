@@ -24,7 +24,6 @@ void pipe_init(int param) {
 }
 ```
 
-
 `shell.c, main`
 
 ```c
@@ -78,7 +77,7 @@ __Possible usages are:__
 
 ## Cache exploration by sweeping parameters
 
-I was interested in optimizing the data cache regardless of the instruction cache. The instruction cache optimisation can also be done by writing specific benchmarks.
+I was interested in optimizing the data cache regardless of the instruction cache. The instruction cache optimization can also be done by writing specific benchmarks.
 
 For instance, an instruction cache benchmark could be a program with multiple pointless functions containing a random number of `nop` instructions, and then randomly pointing out to other functions, until the end. This would force the instructions cache to flush and reload. We could also write a more sequential program with better space locality for the cache, which could be our second benchmark type.
 
@@ -145,7 +144,7 @@ It's generation can be found in `inputs/benchmarking/generate_benchmarks.py`.
 
 Example of execution in the terminal:
 
-![Benchmark terminal](exemple_benchmark.png)
+![Benchmark terminal](example_benchmark.png)
 ![Block size ](blocksize.png)
 
 The other parameters were: 8-ways, 64KB Cache size.
