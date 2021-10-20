@@ -17,44 +17,44 @@
  * through the pipeline. Rather, it carries the original instruction, operand
  * information and values as they are collected, and destination information. */
 typedef struct Pipe_Op {
-    /* PC of this instruction */
-    uint32_t pc;
-    /* raw instruction */
-    uint32_t instruction;
-    /* decoded opcode and subopcode fields */
-    int opcode, subop;
+	/* PC of this instruction */
+	uint32_t pc;
+	/* raw instruction */
+	uint32_t instruction;
+	/* decoded opcode and subopcode fields */
+	int opcode, subop;
 
-    /* immediate value, if any, for ALU immediates */
-    uint32_t imm16, se_imm16;
-    /* shift amount */
-    int shamt;
+	/* immediate value, if any, for ALU immediates */
+	uint32_t imm16, se_imm16;
+	/* shift amount */
+	int shamt;
 
-    /* register source values */
-    int reg_src1, reg_src2; /* 0 -- 31 if this inst has register source(s), or
+	/* register source values */
+	int reg_src1, reg_src2;                  /* 0 -- 31 if this inst has register source(s), or
                                -1 otherwise */
-    uint32_t reg_src1_value, reg_src2_value; /* values of operands from source
+	uint32_t reg_src1_value, reg_src2_value; /* values of operands from source
                                                 regs */
 
-    /* memory access information */
-    int is_mem;       /* is this a load/store? */
-    uint32_t mem_addr; /* address if applicable */
-    int mem_write; /* is this a write to memory? */
-    uint32_t mem_value; /* value loaded from memory or to be written to memory */
+	/* memory access information */
+	int is_mem;         /* is this a load/store? */
+	uint32_t mem_addr;  /* address if applicable */
+	int mem_write;      /* is this a write to memory? */
+	uint32_t mem_value; /* value loaded from memory or to be written to memory */
 
-    /* register destination information */
-    int reg_dst; /* 0 -- 31 if this inst has a destination register, -1
+	/* register destination information */
+	int reg_dst;             /* 0 -- 31 if this inst has a destination register, -1
                     otherwise */
-    uint32_t reg_dst_value; /* value to write into dest reg. */
-    int reg_dst_value_ready; /* destination value produced yet? */
+	uint32_t reg_dst_value;  /* value to write into dest reg. */
+	int reg_dst_value_ready; /* destination value produced yet? */
 
-    /* branch information */
-    int is_branch;        /* is this a branch? */
-    uint32_t branch_dest; /* branch destination (if taken) */
-    int branch_cond;      /* is this a conditional branch? */
-    int branch_taken;     /* branch taken? (set as soon as resolved: in decode
+	/* branch information */
+	int is_branch;        /* is this a branch? */
+	uint32_t branch_dest; /* branch destination (if taken) */
+	int branch_cond;      /* is this a conditional branch? */
+	int branch_taken;     /* branch taken? (set as soon as resolved: in decode
                              for unconditional, execute for conditional) */
-    int is_link;          /* jump-and-link or branch-and-link inst? */
-    int link_reg;         /* register to place link into? */
+	int is_link;          /* jump-and-link or branch-and-link inst? */
+	int link_reg;         /* register to place link into? */
 
 } Pipe_Op;
 
@@ -68,27 +68,27 @@ typedef struct Pipe_Op {
  */
 
 typedef struct Pipe_State {
-    /* pipe op currently at the input of the given stage (NULL for none) */
-    Pipe_Op *decode_op, *execute_op, *mem_op, *wb_op;
+	/* pipe op currently at the input of the given stage (NULL for none) */
+	Pipe_Op *decode_op, *execute_op, *mem_op, *wb_op;
 
-    /* register file state */
-    uint32_t REGS[32];
-    uint32_t HI, LO;
+	/* register file state */
+	uint32_t REGS[32];
+	uint32_t HI, LO;
 
-    /* program counter in fetch stage */
-    uint32_t PC;
+	/* program counter in fetch stage */
+	uint32_t PC;
 
-    /* information for PC update (branch recovery). Branches should use this
+	/* information for PC update (branch recovery). Branches should use this
      * mechanism to redirect the fetch stage, and flush the ops that came after
      * the branch as necessary. */
-    int branch_recover; /* set to '1' to load a new PC */
-    uint32_t branch_dest; /* next fetch will be from this PC */
-    int branch_flush; /* how many stages to flush during recover? (1 = fetch, 2 = fetch/decode, ...) */
+	int branch_recover;   /* set to '1' to load a new PC */
+	uint32_t branch_dest; /* next fetch will be from this PC */
+	int branch_flush;     /* how many stages to flush during recover? (1 = fetch, 2 = fetch/decode, ...) */
 
-    /* multiplier stall info */
-    int multiplier_stall; /* number of remaining cycles until HI/LO are ready */
+	/* multiplier stall info */
+	int multiplier_stall; /* number of remaining cycles until HI/LO are ready */
 
-    /* place other information here as necessary */
+	/* place other information here as necessary */
 
 } Pipe_State;
 
