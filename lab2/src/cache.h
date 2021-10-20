@@ -45,5 +45,6 @@ extern Cache *instruction_cache, *data_cache;
 
 //Returns a pointer to a cache
 Cache *cache_init(uint32_t cache_size, uint32_t block_size, uint8_t associativity);
+void cache_deinit(Cache *);
 Cache_response cache_access(Cache *, uint32_t);
 #endif

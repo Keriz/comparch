@@ -136,6 +136,9 @@ void pipe_stage_wb() {
 			pipe.PC =
 			    op->pc; /* fetch will do pc += 4, then we stop with correct PC */
 			RUN_BIT = 0;
+			//deallocate caches
+			cache_deinit(data_cache);
+			cache_deinit(instruction_cache);
 		}
 	}
 

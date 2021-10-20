@@ -75,6 +75,15 @@ Cache *cache_init(uint32_t cache_size, uint32_t block_size, uint8_t associativit
 	return c;
 }
 
+void cache_deinit(Cache *c) {
+	for (size_t i = 0; i < c->nb_sets; i++) {
+		free(c->sets[i].ways);
+	}
+
+	free(c->sets);
+	free(c);
+}
+
 Cache_response cache_access(Cache *c, uint32_t addr) {
 	if (!c) exit(INVALID_POINTER);
 
