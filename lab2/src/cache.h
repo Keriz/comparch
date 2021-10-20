@@ -20,6 +20,13 @@ typedef enum Cache_response
 #include <math.h>
 #include <stdint.h>
 
+//Miss-status holding registers
+typedef struct MSHR {
+	uint8_t valid_bit;
+	uint32_t addr_cache_block_miss;
+	uint8_t done_bit;
+} MSHR;
+
 // implentation of a set-associative cache
 typedef struct Cache_line {
 	uint32_t tag; //tag_length = address_length - index_length - block_offset_length
@@ -39,9 +46,10 @@ typedef struct Cache {
 	uint16_t nb_sets;
 	uint32_t tag_mask;
 	Cache_set *sets;
+	MSHR mshrs[16];
 } Cache;
 
-extern Cache *instruction_cache, *data_cache;
+extern Cache *instruction_cache, *data_cache, *unified_l2_cache;
 
 //Returns a pointer to a cache
 Cache *cache_init(uint32_t cache_size, uint32_t block_size, uint8_t associativity);

@@ -42,6 +42,7 @@ void pipe_init() {
 
 	instruction_cache = cache_init(1 << 13, 32, 4);
 	data_cache        = cache_init(1 << 16, 32, 8);
+	unified_l2_cache  = cache_init(1 << 18, 32, 16);
 }
 
 void pipe_cycle() {
@@ -139,6 +140,7 @@ void pipe_stage_wb() {
 			//deallocate caches
 			cache_deinit(data_cache);
 			cache_deinit(instruction_cache);
+			cache_deinit(unified_l2_cache);
 		}
 	}
 

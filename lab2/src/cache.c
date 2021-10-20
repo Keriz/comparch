@@ -9,7 +9,7 @@
 #define INVALID_POINTER      3
 
 //extern
-Cache *instruction_cache, *data_cache;
+Cache *instruction_cache, *data_cache, *unified_l2_cache;
 
 static inline uint32_t c_log2(uint32_t v) {
 	return 31 - __builtin_clzl(v);
