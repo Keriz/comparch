@@ -17,6 +17,8 @@ typedef enum Cache_response
 #define DIRECT_MAPPED     0x01
 #define FOUR_WAY          0x04
 
+#define MAX_NB_MSHR 16
+
 #include <math.h>
 #include <stdint.h>
 
@@ -55,7 +57,7 @@ typedef struct Cache {
 	uint16_t nb_sets;
 	uint32_t tag_mask;
 	Cache_set *sets;
-	MSHR mshrs[16];
+	MSHR mshrs[MAX_NB_MSHR];
 } Cache;
 
 extern Cache *instruction_cache, *data_cache, *unified_l2_cache;
@@ -63,9 +65,9 @@ extern Cache *instruction_cache, *data_cache, *unified_l2_cache;
 //Returns a pointer to a cache
 Cache *cache_init(uint32_t cache_size, uint32_t block_size, uint8_t associativity);
 void cache_deinit(Cache *);
-void cache_free_mshr(Cache *);
-void cache_allocate_mshr(Cache *);
-void cache_mshrs_left(Cache *);
+void cache_free_mshr(Cache *, uint32_t);
+void cache_allocate_mshr(Cache *, uint32_t);
+uint8_t cache_mshrs_left(Cache *);
 Cache_response cache_request(Cache *, uint32_t);
 void cache_insert(Cache *, uint32_t);
 #endif
