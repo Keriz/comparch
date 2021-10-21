@@ -21,6 +21,15 @@ typedef enum Cache_response
 #include <stdint.h>
 
 //Miss-status holding registers
+
+enum l2_miss_state
+{
+	NO_MISS,
+	DELAY_MEM_CONTROLLER,
+	CACHE_BLOCK_BEING_INSERTED,
+	CACHE_HIT
+} l2_miss_state_t;
+
 typedef struct MSHR {
 	uint8_t valid_bit;
 	uint32_t addr_cache_block_miss;
@@ -54,5 +63,9 @@ extern Cache *instruction_cache, *data_cache, *unified_l2_cache;
 //Returns a pointer to a cache
 Cache *cache_init(uint32_t cache_size, uint32_t block_size, uint8_t associativity);
 void cache_deinit(Cache *);
-Cache_response cache_access(Cache *, uint32_t);
+void cache_free_mshr(Cache *);
+void cache_allocate_mshr(Cache *);
+void cache_mshrs_left(Cache *);
+Cache_response cache_request(Cache *, uint32_t);
+void cache_insert(Cache *, uint32_t);
 #endif
