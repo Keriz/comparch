@@ -84,7 +84,39 @@ void cache_deinit(Cache *c) {
 	free(c);
 }
 
-Cache_response cache_access(Cache *c, uint32_t addr) {
+Cache_response cache_request(Cache *c, uint32_t addr) {
+	if (!c) exit(INVALID_POINTER);
+
+	uint8_t set_offset = c_log2(c->block_size);
+	uint8_t tag_offset = c_log2(c->block_size) + c_log2(c->nb_sets);
+	uint32_t tag       = addr >> tag_offset;
+	uint32_t set       = (addr >> set_offset) & ((1 << c_log2(c->nb_sets)) - 1);
+	uint16_t way_index = 0;
+
+	for (size_t i = 0; i < c->associativity; i++) {
+		//already in cache, nothing to do
+		way_index = i;
+		if (!c->sets[set].ways[i].v_flag) {
+			/* 			c->sets[set].ways[i].v_flag = 1;
+			c->sets[set].ways[i].tag    = tag; */
+			/* update_access_recency(c, set, way_index); */
+			return miss;
+		} else if (c->sets[set].ways[i].tag == tag) {
+			update_access_recency(c, set, way_index);
+			return hit;
+		}
+	}
+	//if we're here, that's a miss!
+	//increment cycles by 51, if d flag, write back, otherwise just load new memory
+	/* 	if (c->sets[set].ways[way_index].d_flag) {
+	} */
+	/* 	size_t lru                 = least_recently_used_policy(c, set); //pick the LRU way in the set, where our new block will be
+	c->sets[set].ways[lru].tag = tag;
+	update_access_recency(c, set, lru); */
+	return miss;
+}
+
+void cache_insert(Cache *c, uint32_t addr) {
 	if (!c) exit(INVALID_POINTER);
 
 	uint8_t set_offset = c_log2(c->block_size);
@@ -100,11 +132,9 @@ Cache_response cache_access(Cache *c, uint32_t addr) {
 			c->sets[set].ways[i].v_flag = 1;
 			c->sets[set].ways[i].tag    = tag;
 			update_access_recency(c, set, way_index);
-			return miss;
-		} else if (c->sets[set].ways[i].tag == tag) {
+		} /* else if (c->sets[set].ways[i].tag == tag) {
 			update_access_recency(c, set, way_index);
-			return hit;
-		}
+		} */
 	}
 	//if we're here, that's a miss!
 	//increment cycles by 51, if d flag, write back, otherwise just load new memory
@@ -113,5 +143,35 @@ Cache_response cache_access(Cache *c, uint32_t addr) {
 	size_t lru                 = least_recently_used_policy(c, set); //pick the LRU way in the set, where our new block will be
 	c->sets[set].ways[lru].tag = tag;
 	update_access_recency(c, set, lru);
-	return miss;
+}
+
+void cache_free_mshr(Cache *c, uint32_t addr) {
+	for (size_t i = 0; i < MAX_NB_MSHR; i++) {
+		if (c->mshrs[i].addr_cache_block_miss == addr) {
+			c->mshrs[i].addr_cache_block_miss = 0x0;
+			c->mshrs[i].valid_bit             = 0;
+			c->mshrs[i].done_bit              = 0;
+		}
+	}
+}
+
+void cache_allocate_mshr(Cache *c, uint32_t addr) {
+	for (size_t i = 0; i < MAX_NB_MSHR; i++) {
+		if (c->mshrs[i].addr_cache_block_miss != 0x0) {
+			c->mshrs[i].addr_cache_block_miss = addr;
+			c->mshrs[i].done_bit              = 0;
+			c->mshrs[i].valid_bit             = 0;
+		}
+	}
+}
+
+uint8_t cache_mshrs_left(Cache *c) {
+	uint8_t counter = 0;
+	for (size_t i = 0; i < MAX_NB_MSHR; i++) {
+		if (c->mshrs[i].addr_cache_block_miss != 0x0) {
+			counter++;
+		}
+	}
+
+	return (counter == MAX_NB_MSHR) ? 0 : 1;
 }
