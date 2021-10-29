@@ -1,6 +1,8 @@
 #ifndef CACHE_H
 #define CACHE_H
 
+#include <math.h>
+#include <stdint.h>
 typedef enum Cache_response
 {
 	miss,
@@ -18,9 +20,8 @@ typedef enum Cache_response
 #define FOUR_WAY          0x04
 
 #define MAX_NB_MSHR 16
-
-#include <math.h>
-#include <stdint.h>
+#define BLOCK_MASK  (UINT64_MAX ^ ((1 << 32) - 1))
+#define BLOCK_EMPTY -1
 
 //Miss-status holding registers
 
@@ -34,7 +35,7 @@ enum l2_miss_state
 
 typedef struct MSHR {
 	uint8_t valid_bit;
-	uint32_t addr_cache_block_miss;
+	int addr_cache_block_miss;
 	uint8_t done_bit;
 } MSHR;
 
