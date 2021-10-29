@@ -72,6 +72,12 @@ Cache *cache_init(uint32_t cache_size, uint32_t block_size, uint8_t associativit
 		}
 	}
 
+	for (size_t i; i < MAX_NB_MSHR; ++i) {
+		c->mshrs[i].addr_cache_block_miss = BLOCK_EMPTY;
+		c->mshrs[i].valid_bit             = 0;
+		c->mshrs[i].done_bit              = 0;
+	}
+
 	return c;
 }
 
@@ -147,7 +153,7 @@ void cache_insert(Cache *c, uint32_t addr) {
 
 void cache_free_mshr(Cache *c, uint32_t addr) {
 	for (size_t i = 0; i < MAX_NB_MSHR; i++) {
-		if (c->mshrs[i].addr_cache_block_miss == addr) {
+		if (c->mshrs[i].addr_cache_block_miss == (addr & BLOCK_MASK)) {
 			c->mshrs[i].addr_cache_block_miss = BLOCK_EMPTY;
 			c->mshrs[i].valid_bit             = 0;
 			c->mshrs[i].done_bit              = 0;
@@ -157,10 +163,11 @@ void cache_free_mshr(Cache *c, uint32_t addr) {
 
 void cache_allocate_mshr(Cache *c, uint32_t addr) {
 	for (size_t i = 0; i < MAX_NB_MSHR; i++) {
-		if (c->mshrs[i].addr_cache_block_miss != BLOCK_EMPTY) {
+		if (c->mshrs[i].addr_cache_block_miss == BLOCK_EMPTY) {
 			c->mshrs[i].addr_cache_block_miss = addr & BLOCK_MASK;
 			c->mshrs[i].done_bit              = 0;
 			c->mshrs[i].valid_bit             = 0;
+			return;
 		}
 	}
 }
