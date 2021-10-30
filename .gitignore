@@ -17,3 +17,4 @@ lab1/task_2/report_gthi.pdf
 lab1/task_2/example_benchmark.png
 lab2/inputs/benchmarking/*/*.s
 lab2/inputs/benchmarking/*/*.x
+*.trace
