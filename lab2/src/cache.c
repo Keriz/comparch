@@ -1,4 +1,5 @@
 #include "cache.h"
+#include "dram.h"
 #include "shell.h"
 
 #include <stdio.h>
@@ -161,12 +162,13 @@ void cache_free_mshr(Cache *c, uint32_t addr) {
 	}
 }
 
-void cache_allocate_mshr(Cache *c, uint32_t addr) {
+void cache_allocate_mshr(Cache *c, uint32_t addr, uint32_t cycle, Req_stage_origin origin) {
 	for (size_t i = 0; i < MAX_NB_MSHR; i++) {
 		if (c->mshrs[i].addr_cache_block_miss == BLOCK_EMPTY) {
 			c->mshrs[i].addr_cache_block_miss = addr & BLOCK_MASK;
 			c->mshrs[i].done_bit              = 0;
 			c->mshrs[i].valid_bit             = 0;
+			dram_mc_issue_request(addr, cycle, origin);
 			return;
 		}
 	}
@@ -175,7 +177,7 @@ void cache_allocate_mshr(Cache *c, uint32_t addr) {
 uint8_t cache_mshrs_left(Cache *c) {
 	uint8_t counter = 0;
 	for (size_t i = 0; i < MAX_NB_MSHR; i++) {
-		if (c->mshrs[i].addr_cache_block_miss != 0x0) {
+		if (c->mshrs[i].addr_cache_block_miss != BLOCK_EMPTY) {
 			counter++;
 		}
 	}
