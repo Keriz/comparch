@@ -1,17 +1,26 @@
 #include "dram.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 Dram dram;
 
+Request *add_req(uint32_t addr, uint32_t cycle, uint32_t origin);
+Request *queue_get_last();
+void remove_req(Request *r);
+
+void dram_access(Request *r);
+uint8_t dram_is_req_issuable(Request *r, uint8_t bank_index);
+void dram_issue_command(Request *r, uint8_t bank_index);
+Row_buffer_states dram_rb_actions(uint8_t bank_i, uint32_t row);
+Request *fr_fcfs_policy(size_t bank_i);
+
 void dram_initialize() {
 	for (size_t i = 0; i < NB_BANKS; i++) {
-		memset(dram.banks[i].rows, 0, sizeof(Row) * NB_ROWS);
-		memset(dram.banks[i].row_buffer, 0, sizeof(Row));
+		//memset(dram.banks[i].rows, 0, sizeof(Row) * NB_ROWS);
+		dram.banks[i].row_buffer = ROW_CLOSED;
+		memset(dram.bank_requests[i], 0, sizeof(Request *));
 	}
-
-	//initialize mem controller
-	req_queue       = malloc(sizeof(Request));
-	req_queue->next = NULL;
-	req_queue->prev = NULL;
 }
 
 void dram_deinitialize() {
@@ -26,7 +35,13 @@ void dram_deinitialize() {
 	}
 }
 
-void dram_mc_issue_request() {
+void dram_mc_issue_request(uint32_t addr, uint32_t cycle, Req_stage_origin origin) {
+	//create request
+	add_req(addr, cycle, origin);
+	/* 
+	switch ()
+		uint8_t bank_i = addr & BANK_MASK;
+	dram->bank[bank_i]; */
 }
 
 void remove_req(Request *r) {
@@ -37,33 +52,150 @@ void remove_req(Request *r) {
 	free(r);
 }
 
-void add_req(Request *r) {
-	if (!r) exit(3);
-	Request *new_r = malloc(sizeof(Request));
+Request *add_req(uint32_t addr, uint32_t cycle, uint32_t origin) {
+	Request *new_r;
+	if (req_queue == NULL) {
+		req_queue   = malloc(sizeof(Request));
+		new_r       = req_queue;
+		new_r->prev = NULL;
+
+	} else {
+		new_r       = malloc(sizeof(Request));
+		new_r->prev = queue_get_last();
+	}
 	if (!new_r) exit(3);
 
-	new_r->prev = queue_get_last();
-	new_r->next = NULL;
+	new_r->addr      = addr;
+	new_r->cycle     = cycle;
+	new_r->origin    = origin;
+	new_r->next      = NULL;
+	new_r->state     = REQ_UNASSIGNED;
+	new_r->cmd_index = 0;
+
+	return new_r;
 }
 
 Request *queue_get_last() {
 	Request *r = req_queue;
-	while (r->next != NULL)
+	while (r && r->next != NULL)
 		r = r->next;
 	return r;
 }
 
 /*
+Scan the request queue to find the next schedulable one, if any
 */
-void dram_mc_scan_queue() {
-	//only one req scheudable? issue a dram_access
+void dram_cycle() {
+	if (dram.cmd_bus.counter > 0) dram.cmd_bus.counter--;
+	if (dram.data_bus.counter > 0) dram.data_bus.counter--;
+	if (dram.address_bus.counter > 0) dram.address_bus.counter--;
 
-	//multiple req scheludable? find which one to issue according to fr_fcfs policy
+	//update cycle for each bank if needed
+	for (size_t i = 0; i < NB_BANKS; i++) {
+		if (dram.banks[i].counter > 0)
+			dram.banks[i].counter--;
+
+		if (dram.banks[i].counter == 0) {
+			if (dram.banks[i].lastcmd == READ_WRITE) {
+				dram.data_bus.counter = 50;
+				remove_req(dram.bank_requests[i]);
+			}
+
+			//is there any next actions for the ongoing request?
+			if (dram.bank_requests[i] != NULL) {
+				dram_issue_command(dram.bank_requests[i], i);
+			} else {
+				//is there a new request to issue for this bank?
+				Request *req_to_issue = fr_fcfs_policy(i);
+				if (req_to_issue == NULL) return;
+				uint8_t row = (req_to_issue->addr & ROW_MASK) >> 16;
+
+				//find out what commands would need to be sent for that request
+				switch (dram_rb_actions(i, row)) {
+					case RB_HIT:
+						req_to_issue->cmds_to_issue[0] = READ_WRITE;
+						break;
+					case RB_MISS:
+						req_to_issue->cmds_to_issue[0] = ACTIVATE;
+						req_to_issue->cmds_to_issue[1] = READ_WRITE;
+						break;
+					case RB_CONFLICT:
+						req_to_issue->cmds_to_issue[0] = PRECHARGE;
+						req_to_issue->cmds_to_issue[1] = ACTIVATE;
+						req_to_issue->cmds_to_issue[2] = READ_WRITE;
+						break;
+				}
+
+				if (dram_is_req_issuable(req_to_issue, i)) {
+					dram.bank_requests[i] = req_to_issue;
+					dram_issue_command(dram.bank_requests[i], i);
+				}
+			}
+		}
+	}
 }
 
-void dram_access() {
+//for each paper
+
+uint8_t dram_is_req_issuable(Request *r, uint8_t bank_index) {
+	uint32_t next_cycles_data[400], next_cycles_cmd[400], next_cycles_addr[400];
+
+	memset(next_cycles_data, dram.data_bus.counter * sizeof(uint32_t), 10);
+	memset(next_cycles_cmd, dram.cmd_bus.counter * sizeof(uint32_t), 10);
+	memset(next_cycles_addr, dram.address_bus.counter * sizeof(uint32_t), 10);
+
+	uint8_t conflict = 0;
+
+	for (size_t i = 0; i < NB_BANKS; i++) {
+		Request *tmp  = dram.bank_requests[i];
+		uint32_t cntr = dram.banks[i].counter;
+
+		if (tmp == NULL) continue;
+		for (size_t j = tmp->cmd_index; j < 4; j++) {
+			memset(next_cycles_addr + (j * 100 + cntr) * sizeof(uint32_t), 50 * sizeof(uint32_t), i + 1);
+			memset(next_cycles_cmd + (j * 100 + cntr) * sizeof(uint32_t), 50 * sizeof(uint32_t), i + 1);
+
+			if (tmp->cmds_to_issue[j] == READ_WRITE) {
+				memset(next_cycles_data + (j * 100 + cntr) * sizeof(uint32_t), 50 * sizeof(uint32_t), i + 1);
+				break;
+			}
+			//TODO: take care of the case when a req is issued at the same time the last one finished
+		}
+	}
+
+	printf("addr_bus: ");
+	for (size_t i = 0; i < 400; i++)
+		if (next_cycles_addr[i])
+			printf("%lu ", next_cycles_addr[i]);
+	printf("\ncmd_bus: ");
+	for (size_t i = 0; i < 400; i++)
+		if (next_cycles_cmd[i])
+			printf("%lu ", next_cycles_cmd[i]);
+	printf("\ndata_bus: ");
+	for (size_t i = 0; i < 400; i++)
+		if (next_cycles_data[i])
+			printf("%lu ", next_cycles_data[i]);
+	printf("\n");
+
+	return conflict;
+}
+
+void dram_issue_command(Request *r, uint8_t bank_index) {
 	dram.cmd_bus.counter     = 4;
 	dram.address_bus.counter = 4;
+
+	/* switch (r->cmds_to_issue[r->cmd_index]) { //for future use
+		case PRECHARGE:
+			break;
+		case ACTIVATE:
+			break;
+		case READ_WRITE:
+			break;
+	} */
+
+	dram.banks[bank_index].lastcmd = r->cmds_to_issue[r->cmd_index];
+	dram.banks[bank_index].counter = 100;
+	r->cmd_index++;
 }
 
 /*
@@ -71,12 +203,76 @@ void dram_access() {
 2. Requests that arrived earlier are prioritized over others
 3. Requests coming from the memory stage are priorized over others
 */
-/* void fr_fcfs_policy(Request_queue *rq) {
-	Request r_scheduled;
-	Request *r = rq->first;
+Request *fr_fcfs_policy(size_t bank_i) {
+	Request *r_to_schedule = NULL, *r = req_queue;
+	Request *bank_req[1000]        = {NULL};
+	Request *row_buffer_hits[1000] = {NULL};
+	uint32_t nb_hits = 0, nb_req = 0;
 
+	if (!r) return NULL; //no requests to take care of
+
+	//Keep only the ones that are for bank_i and not already assigned
 	while (r != NULL) {
+		if (r->state == REQ_ASSIGNED) {
+			r = r->next;
+			continue;
+		}
+
+		uint8_t bank_index = (r->addr & BANK_MASK) >> 5;
+		uint8_t row        = (r->addr & ROW_MASK) >> 16;
+		if (bank_i == bank_index) {
+			bank_req[nb_req] = r;
+			nb_req++;
+		}
 
 		r = r->next;
 	}
-} */
+
+	if (nb_req == 0) return NULL;
+
+	//1. Requests that are row buffer hits are prioritized over others
+	for (size_t i = 0; i < nb_req; i++) {
+		uint8_t row = (bank_req[i]->addr & ROW_MASK) >> 16;
+		if (dram_rb_actions(bank_i, row) == RB_HIT) {
+			row_buffer_hits[nb_hits] = r;
+			nb_hits++;
+		}
+	}
+
+	//2.Request that arrived earlier are prioritized over others
+	//3. possibly, we have req from instr and mem issued at the same cycle
+	if (nb_hits != 0) {
+		Request *tmp = row_buffer_hits[0];
+		for (size_t i = 1; i < nb_hits; i++) {
+			if (row_buffer_hits[i]->cycle < tmp->cycle) {
+				tmp = row_buffer_hits[i];
+			} else if (row_buffer_hits[i]->cycle == tmp->cycle) {
+				if (tmp->origin == INSTRUCTION) //mem has priority!
+					tmp = row_buffer_hits[i];
+			}
+		}
+		r_to_schedule = tmp;
+	} else {
+		Request *tmp = bank_req[0];
+		for (size_t i = 1; i < nb_req; i++) {
+			if (bank_req[i]->cycle < tmp->cycle) {
+				tmp = bank_req[i];
+			} else if (bank_req[i]->cycle == tmp->cycle) {
+				if (tmp->origin == INSTRUCTION) //mem has priority!
+					tmp = bank_req[i];
+			}
+		}
+		r_to_schedule = tmp;
+	}
+
+	return r_to_schedule;
+}
+
+Row_buffer_states dram_rb_actions(uint8_t bank_index, uint32_t row) {
+	if (dram.banks[bank_index].row_buffer == row)
+		return RB_HIT;
+	else if (dram.banks[bank_index].row_buffer == ROW_CLOSED)
+		return RB_MISS;
+	else
+		return RB_CONFLICT;
+}
