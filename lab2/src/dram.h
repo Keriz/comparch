@@ -49,20 +49,21 @@ typedef enum row_buffer_resp
 typedef long int Row;
 
 typedef struct bank_struct {
-	Row rows[NB_ROWS];
+	Row row[NB_ROWS];
 	Row row_buffer;
 	uint16_t counter;
 	Dram_command lastcmd;
+	Request *current_req;
 } Bank;
 
 typedef struct bus_struct {
 	uint16_t counter;
+	Request *current_req;
 } Bus;
 
 typedef struct dram_struct {
 	//since there is only 1 rank, 1 channel, lets write everything in here
-	Bank banks[NB_BANKS];
-	Request *bank_requests[NB_BANKS];
+	Bank bank[NB_BANKS];
 	Bus cmd_bus, data_bus, address_bus;
 } Dram;
 

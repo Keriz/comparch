@@ -17,9 +17,9 @@ Request *fr_fcfs_policy(size_t bank_i);
 
 void dram_initialize() {
 	for (size_t i = 0; i < NB_BANKS; i++) {
-		//memset(dram.banks[i].rows, 0, sizeof(Row) * NB_ROWS);
-		dram.banks[i].row_buffer = ROW_CLOSED;
-		memset(dram.bank_requests[i], 0, sizeof(Request *));
+		//memset(dram.bank[i].rows, 0, sizeof(Row) * NB_ROWS);
+		dram.bank[i].row_buffer  = ROW_CLOSED;
+		dram.bank[i].current_req = NULL;
 	}
 }
 
@@ -87,23 +87,30 @@ Scan the request queue to find the next schedulable one, if any
 */
 void dram_cycle() {
 	if (dram.cmd_bus.counter > 0) dram.cmd_bus.counter--;
-	if (dram.data_bus.counter > 0) dram.data_bus.counter--;
 	if (dram.address_bus.counter > 0) dram.address_bus.counter--;
+	if (dram.data_bus.counter > 0) {
+		dram.data_bus.counter--;
+		if (dram.data_bus.counter == 0) {
+			cache_insert_from_dram(dram.data_bus.current_req->addr);
+			dram.data_bus.current_req = NULL;
+		}
+	}
 
 	//update cycle for each bank if needed
 	for (size_t i = 0; i < NB_BANKS; i++) {
-		if (dram.banks[i].counter > 0)
-			dram.banks[i].counter--;
+		if (dram.bank[i].counter > 0)
+			dram.bank[i].counter--;
 
-		if (dram.banks[i].counter == 0) {
-			if (dram.banks[i].lastcmd == READ_WRITE) {
-				dram.data_bus.counter = 50;
-				remove_req(dram.bank_requests[i]);
+		if (dram.bank[i].counter == 0) {
+			if (dram.bank[i].lastcmd == READ_WRITE) {
+				dram.data_bus.counter     = 50;
+				dram.data_bus.current_req = dram.bank[i].current_req;
+				remove_req(dram.bank[i].current_req);
 			}
 
 			//is there any next actions for the ongoing request?
-			if (dram.bank_requests[i] != NULL) {
-				dram_issue_command(dram.bank_requests[i], i);
+			if (dram.bank[i].current_req != NULL) {
+				dram_issue_command(dram.bank[i].current_req, i);
 			} else {
 				//is there a new request to issue for this bank?
 				Request *req_to_issue = fr_fcfs_policy(i);
@@ -127,8 +134,8 @@ void dram_cycle() {
 				}
 
 				if (dram_is_req_issuable(req_to_issue, i)) {
-					dram.bank_requests[i] = req_to_issue;
-					dram_issue_command(dram.bank_requests[i], i);
+					dram.bank[i].current_req = req_to_issue;
+					dram_issue_command(dram.bank[i].current_req, i);
 				}
 			}
 		}
@@ -147,8 +154,8 @@ uint8_t dram_is_req_issuable(Request *r, uint8_t bank_index) {
 	uint8_t conflict = 0;
 
 	for (size_t i = 0; i < NB_BANKS; i++) {
-		Request *tmp  = dram.bank_requests[i];
-		uint32_t cntr = dram.banks[i].counter;
+		Request *tmp  = dram.bank[i].current_req;
+		uint32_t cntr = dram.bank[i].counter;
 
 		if (tmp == NULL) continue;
 		for (size_t j = tmp->cmd_index; j < 4; j++) {
@@ -193,8 +200,8 @@ void dram_issue_command(Request *r, uint8_t bank_index) {
 			break;
 	} */
 
-	dram.banks[bank_index].lastcmd = r->cmds_to_issue[r->cmd_index];
-	dram.banks[bank_index].counter = 100;
+	dram.bank[bank_index].lastcmd = r->cmds_to_issue[r->cmd_index];
+	dram.bank[bank_index].counter = 100;
 	r->cmd_index++;
 }
 
@@ -269,9 +276,9 @@ Request *fr_fcfs_policy(size_t bank_i) {
 }
 
 Row_buffer_states dram_rb_actions(uint8_t bank_index, uint32_t row) {
-	if (dram.banks[bank_index].row_buffer == row)
+	if (dram.bank[bank_index].row_buffer == row)
 		return RB_HIT;
-	else if (dram.banks[bank_index].row_buffer == ROW_CLOSED)
+	else if (dram.bank[bank_index].row_buffer == ROW_CLOSED)
 		return RB_MISS;
 	else
 		return RB_CONFLICT;
