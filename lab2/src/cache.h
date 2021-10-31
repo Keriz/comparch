@@ -1,6 +1,7 @@
 #ifndef CACHE_H
 #define CACHE_H
 
+#include "mc_definitions.h"
 #include <math.h>
 #include <stdint.h>
 typedef enum Cache_response
@@ -20,10 +21,8 @@ typedef enum Cache_response
 #define FOUR_WAY          0x04
 
 #define MAX_NB_MSHR 16
-#define BLOCK_MASK  (UINT64_MAX ^ ((1 << 32) - 1))
+#define BLOCK_MASK  (UINT32_MAX ^ ((1 << 6) - 1))
 #define BLOCK_EMPTY -1
-
-//Miss-status holding registers
 
 enum l2_miss_state
 {
@@ -33,6 +32,7 @@ enum l2_miss_state
 	CACHE_HIT
 } l2_miss_state_t;
 
+//Miss-status holding registers
 typedef struct MSHR {
 	uint8_t valid_bit;
 	int addr_cache_block_miss;
@@ -66,9 +66,9 @@ extern Cache *instruction_cache, *data_cache, *unified_l2_cache;
 //Returns a pointer to a cache
 Cache *cache_init(uint32_t cache_size, uint32_t block_size, uint8_t associativity);
 void cache_deinit(Cache *);
-void cache_free_mshr(Cache *, uint32_t);
-void cache_allocate_mshr(Cache *, uint32_t);
+void cache_free_mshr(Cache *, uint32_t addr);
+void cache_allocate_mshr(Cache *, uint32_t addr, uint32_t cycle, Req_stage_origin origin);
 uint8_t cache_mshrs_left(Cache *);
-Cache_response cache_request(Cache *, uint32_t);
-void cache_insert(Cache *, uint32_t);
+Cache_response cache_request(Cache *, uint32_t addr);
+void cache_insert(Cache *, uint32_t addr);
 #endif
