@@ -54,7 +54,8 @@ void remove_req(Request *r) {
 
 	if (r->prev != NULL) {
 		r->prev->next = r->next;
-		r->next->prev = r->prev;
+		if (r->next)
+			r->next->prev = r->prev;
 	} else { //r == r_queue
 		if (r->next) {
 			req_queue     = r->next;
@@ -126,10 +127,10 @@ void dram_cycle() {
 		if (dram.bank[i].counter == 0) {
 
 			if (dram.bank[i].lastcmd == READ_WRITE) {
-				dram.data_bus.counter     = 50;
+				dram.data_bus.counter     = 51;
 				dram.bank[i].lastcmd      = DATA;
 				dram.data_bus.current_req = dram.bank[i].current_req;
-				return;
+				dram.bank[i].current_req  = NULL;
 			}
 			//is there any next actions for the ongoing request?
 			if (dram.bank[i].current_req != NULL) {
@@ -137,7 +138,7 @@ void dram_cycle() {
 			} else {
 				//is there a new request to issue for this bank?
 				Request *req_to_issue = fr_fcfs_policy(i);
-				if (req_to_issue == NULL) return;
+				if (req_to_issue == NULL) continue;
 				uint8_t row = (req_to_issue->addr & ROW_MASK) >> 16;
 
 				//find out what commands would need to be sent for that request
@@ -165,8 +166,6 @@ void dram_cycle() {
 		}
 	}
 }
-
-//for each paper
 
 uint8_t dram_is_req_issuable(Request *r, uint8_t bank_index) {
 	uint32_t next_cycles_data[500] = {0}, next_cycles_cmd[500] = {0}, next_cycles_addr[500] = {0};
