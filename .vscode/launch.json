@@ -8,12 +8,12 @@
             "name": "gcc.exe - Build and debug active file",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceRoot}\\lab1\\sim.exe",
+            "program": "${workspaceRoot}\\lab2\\sim.exe",
             "args": [
-                "${workspaceRoot}/lab1/inputs/cache/test1.x"
+                "${workspaceRoot}/lab2/inputs/custom/test1.x"
             ],
             "stopAtEntry": false,
-            "cwd": "${workspaceRoot}",
+            "cwd": "${workspaceRoot}/lab2",
             "environment": [],
             "externalConsole": false,
             "MIMode": "gdb",
