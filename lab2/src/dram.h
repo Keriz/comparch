@@ -1,8 +1,8 @@
 #ifndef DRAM_H
 #define DRAM_H
 
+#include "cache.h"
 #include "mc_definitions.h"
-#include <stdint.h>
 
 #define NB_ROWS    64000
 #define NB_BANKS   1 << 3
@@ -16,6 +16,8 @@ typedef enum Dram_command
 	PRECHARGE,
 	ACTIVATE,
 	READ_WRITE,
+	DATA,
+	NO_COMMAND
 } Dram_command;
 
 typedef enum req_states
@@ -65,11 +67,12 @@ typedef struct dram_struct {
 	//since there is only 1 rank, 1 channel, lets write everything in here
 	Bank bank[NB_BANKS];
 	Bus cmd_bus, data_bus, address_bus;
+	Cache *l2, *l1d, l1i;
 } Dram;
 
 extern Dram dram;
 
-void dram_initialize();
+void dram_initialize(Cache *l2);
 void dram_deinitialize();
 void dram_cycle();
 void dram_mc_issue_request(uint32_t addr, uint32_t cycle, Req_stage_origin origin);
