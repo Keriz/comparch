@@ -2,6 +2,8 @@
 #include "dram.h"
 #include "shell.h"
 
+#include <math.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -73,11 +75,13 @@ Cache *cache_init(uint32_t cache_size, uint32_t block_size, uint8_t associativit
 		}
 	}
 
-	for (size_t i; i < MAX_NB_MSHR; ++i) {
+	for (size_t i = 0; i < MAX_NB_MSHR; ++i) {
 		c->mshrs[i].addr_cache_block_miss = BLOCK_EMPTY;
 		c->mshrs[i].valid_bit             = 0;
 		c->mshrs[i].done_bit              = 0;
 	}
+
+	c->state = NO_MISS;
 
 	return c;
 }
@@ -183,4 +187,22 @@ uint8_t cache_mshrs_left(Cache *c) {
 	}
 
 	return (counter == MAX_NB_MSHR) ? 0 : 1;
+}
+
+void cache_l2_fill_notification(Cache *c, uint32_t addr, uint8_t origin) {
+	for (size_t i = 0; i < MAX_NB_MSHR; i++) {
+		if (c->mshrs[i].addr_cache_block_miss == (addr & BLOCK_MASK)) {
+			c->mshrs[i].valid_bit = 1;
+			c->state              = FILL_NOTIF_RECEIVED;
+			if (origin == MEM)
+				cache_fill_notification(data_cache);
+			else
+				cache_fill_notification(instruction_cache);
+			return;
+		}
+	}
+}
+
+void cache_fill_notification(Cache *c) {
+	c->state = FILL_NOTIF_RECEIVED;
 }
