@@ -55,9 +55,10 @@ void remove_req(Request *r) {
 	if (r->prev != NULL)
 		r->prev->next = r->next;
 	if (r == req_queue)
-		if (r->next)
-			req_queue = r->next;
-		else
+		if (r->next) {
+			req_queue     = r->next;
+			r->next->prev = NULL;
+		} else
 			req_queue = NULL;
 	free(r);
 }
@@ -73,7 +74,9 @@ Request *add_req(uint32_t addr, uint32_t cycle, uint32_t origin) {
 	} else {
 		new_r = malloc(sizeof(Request));
 		if (!new_r) exit(3);
-		new_r->prev = queue_get_last();
+		Request *last = queue_get_last();
+		new_r->prev   = last;
+		last->next    = new_r;
 	}
 
 	new_r->addr      = addr;
@@ -223,7 +226,7 @@ uint8_t dram_is_req_issuable(Request *r, uint8_t bank_index) {
 void dram_issue_command(Request *r, uint8_t bank_index) {
 	dram.cmd_bus.counter         = 4;
 	dram.address_bus.counter     = 4;
-	dram.address_bus.current_req = r;
+	dram.cmd_bus.current_req     = r;
 	dram.address_bus.current_req = r;
 
 	/* switch (r->cmds_to_issue[r->cmd_index]) { //for future use
