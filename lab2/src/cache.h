@@ -2,8 +2,8 @@
 #define CACHE_H
 
 #include "mc_definitions.h"
-#include <math.h>
 #include <stdint.h>
+
 typedef enum Cache_response
 {
 	miss,
@@ -24,13 +24,16 @@ typedef enum Cache_response
 #define BLOCK_MASK  (UINT32_MAX ^ ((1 << 6) - 1))
 #define BLOCK_EMPTY -1
 
-enum l2_miss_state
+typedef enum cache_state
 {
 	NO_MISS,
-	DELAY_MEM_CONTROLLER,
-	CACHE_BLOCK_BEING_INSERTED,
-	CACHE_HIT
-} l2_miss_state_t;
+	CACHE_HIT_L2,
+	DELAY_MC_PIPE_MW,
+	DELAY_MC_PIPE_MR,
+	WAIT_FILL_NOTIF,
+	FILL_NOTIF_RECEIVED,
+	INSERT_CACHE_BLOCK
+} Cache_state;
 
 //Miss-status holding registers
 typedef struct MSHR {
@@ -58,6 +61,7 @@ typedef struct Cache {
 	uint16_t nb_sets;
 	uint32_t tag_mask;
 	Cache_set *sets;
+	Cache_state state;
 	MSHR mshrs[MAX_NB_MSHR];
 } Cache;
 
@@ -71,4 +75,7 @@ void cache_allocate_mshr(Cache *, uint32_t addr, uint32_t cycle, Req_stage_origi
 uint8_t cache_mshrs_left(Cache *);
 Cache_response cache_request(Cache *, uint32_t addr);
 void cache_insert(Cache *, uint32_t addr);
+void cache_l2_fill_notification(Cache *c, uint32_t addr, uint8_t origin);
+void cache_fill_notification(Cache *c);
+
 #endif
