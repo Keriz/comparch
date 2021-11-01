@@ -1,4 +1,6 @@
 #include "dram.h"
+
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -15,12 +17,14 @@ void dram_issue_command(Request *r, uint8_t bank_index);
 Row_buffer_states dram_rb_actions(uint8_t bank_i, uint32_t row);
 Request *fr_fcfs_policy(size_t bank_i);
 
-void dram_initialize() {
+void dram_initialize(Cache *l2) {
 	for (size_t i = 0; i < NB_BANKS; i++) {
 		//memset(dram.bank[i].rows, 0, sizeof(Row) * NB_ROWS);
 		dram.bank[i].row_buffer  = ROW_CLOSED;
 		dram.bank[i].current_req = NULL;
 	}
+	dram.l2   = l2;
+	req_queue = NULL;
 }
 
 void dram_deinitialize() {
@@ -33,6 +37,7 @@ void dram_deinitialize() {
 
 		free(r);
 	}
+	req_queue = NULL;
 }
 
 void dram_mc_issue_request(uint32_t addr, uint32_t cycle, Req_stage_origin origin) {
@@ -50,20 +55,23 @@ void remove_req(Request *r) {
 	if (r->prev != NULL)
 		r->prev->next = r->next;
 	free(r);
+	if (r == req_queue)
+		req_queue = NULL;
 }
 
 Request *add_req(uint32_t addr, uint32_t cycle, uint32_t origin) {
 	Request *new_r;
 	if (req_queue == NULL) {
-		req_queue   = malloc(sizeof(Request));
-		new_r       = req_queue;
+		req_queue = malloc(sizeof(Request));
+		new_r     = req_queue;
+		if (!new_r) exit(3);
 		new_r->prev = NULL;
 
 	} else {
-		new_r       = malloc(sizeof(Request));
+		new_r = malloc(sizeof(Request));
+		if (!new_r) exit(3);
 		new_r->prev = queue_get_last();
 	}
-	if (!new_r) exit(3);
 
 	new_r->addr      = addr;
 	new_r->cycle     = cycle;
@@ -71,6 +79,10 @@ Request *add_req(uint32_t addr, uint32_t cycle, uint32_t origin) {
 	new_r->next      = NULL;
 	new_r->state     = REQ_UNASSIGNED;
 	new_r->cmd_index = 0;
+
+	for (size_t i = 0; i < 4; i++) {
+		new_r->cmds_to_issue[i] = NO_COMMAND;
+	}
 
 	return new_r;
 }
@@ -91,7 +103,8 @@ void dram_cycle() {
 	if (dram.data_bus.counter > 0) {
 		dram.data_bus.counter--;
 		if (dram.data_bus.counter == 0) {
-			cache_insert_from_dram(dram.data_bus.current_req->addr);
+			cache_l2_fill_notification(dram.l2, dram.data_bus.current_req->addr, dram.data_bus.current_req->origin);
+			remove_req(dram.data_bus.current_req);
 			dram.data_bus.current_req = NULL;
 		}
 	}
@@ -102,12 +115,13 @@ void dram_cycle() {
 			dram.bank[i].counter--;
 
 		if (dram.bank[i].counter == 0) {
+
 			if (dram.bank[i].lastcmd == READ_WRITE) {
 				dram.data_bus.counter     = 50;
+				dram.bank[i].lastcmd      = DATA;
 				dram.data_bus.current_req = dram.bank[i].current_req;
-				remove_req(dram.bank[i].current_req);
+				return;
 			}
-
 			//is there any next actions for the ongoing request?
 			if (dram.bank[i].current_req != NULL) {
 				dram_issue_command(dram.bank[i].current_req, i);
@@ -134,6 +148,7 @@ void dram_cycle() {
 				}
 
 				if (dram_is_req_issuable(req_to_issue, i)) {
+					req_to_issue->state      = REQ_ASSIGNED;
 					dram.bank[i].current_req = req_to_issue;
 					dram_issue_command(dram.bank[i].current_req, i);
 				}
@@ -145,13 +160,11 @@ void dram_cycle() {
 //for each paper
 
 uint8_t dram_is_req_issuable(Request *r, uint8_t bank_index) {
-	uint32_t next_cycles_data[400], next_cycles_cmd[400], next_cycles_addr[400];
+	uint32_t next_cycles_data[500] = {0}, next_cycles_cmd[500] = {0}, next_cycles_addr[500] = {0};
 
 	memset(next_cycles_data, dram.data_bus.counter * sizeof(uint32_t), 10);
 	memset(next_cycles_cmd, dram.cmd_bus.counter * sizeof(uint32_t), 10);
 	memset(next_cycles_addr, dram.address_bus.counter * sizeof(uint32_t), 10);
-
-	uint8_t conflict = 0;
 
 	for (size_t i = 0; i < NB_BANKS; i++) {
 		Request *tmp  = dram.bank[i].current_req;
@@ -170,26 +183,45 @@ uint8_t dram_is_req_issuable(Request *r, uint8_t bank_index) {
 		}
 	}
 
-	printf("addr_bus: ");
-	for (size_t i = 0; i < 400; i++)
+	//for each cycle check if it is a free slot or not..
+	for (size_t i = 0; i < 4; i++) {
+		for (size_t j = 0; j < 4; j++) {
+			if (next_cycles_addr[i * 100 + j])
+				return 0;
+			if (next_cycles_data[i * 100 + j])
+				return 0;
+		}
+
+		if (r->cmds_to_issue[i] == READ_WRITE) {
+			for (size_t j = 0; j < 50; j++)
+				if (next_cycles_data[(i + 1) * 100 + j])
+					return 0;
+			break;
+		}
+	}
+
+	/* 	printf("addr_bus: ");
+	for (size_t i = 0; i < 500; i++)
 		if (next_cycles_addr[i])
 			printf("%lu ", next_cycles_addr[i]);
 	printf("\ncmd_bus: ");
-	for (size_t i = 0; i < 400; i++)
+	for (size_t i = 0; i < 500; i++)
 		if (next_cycles_cmd[i])
 			printf("%lu ", next_cycles_cmd[i]);
 	printf("\ndata_bus: ");
-	for (size_t i = 0; i < 400; i++)
+	for (size_t i = 0; i < 500; i++)
 		if (next_cycles_data[i])
 			printf("%lu ", next_cycles_data[i]);
-	printf("\n");
+	printf("\n"); */
 
-	return conflict;
+	return 1;
 }
 
 void dram_issue_command(Request *r, uint8_t bank_index) {
-	dram.cmd_bus.counter     = 4;
-	dram.address_bus.counter = 4;
+	dram.cmd_bus.counter         = 4;
+	dram.address_bus.counter     = 4;
+	dram.address_bus.current_req = r;
+	dram.address_bus.current_req = r;
 
 	/* switch (r->cmds_to_issue[r->cmd_index]) { //for future use
 		case PRECHARGE:
@@ -200,8 +232,11 @@ void dram_issue_command(Request *r, uint8_t bank_index) {
 			break;
 	} */
 
-	dram.bank[bank_index].lastcmd = r->cmds_to_issue[r->cmd_index];
-	dram.bank[bank_index].counter = 100;
+	dram.bank[bank_index]
+	    .lastcmd                     = r->cmds_to_issue[r->cmd_index];
+	dram.bank[bank_index].row_buffer = r->addr & ROW_MASK;
+	dram.bank[bank_index].counter    = 100;
+
 	r->cmd_index++;
 }
 
