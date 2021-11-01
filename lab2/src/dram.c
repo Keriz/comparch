@@ -7,7 +7,7 @@
 
 Dram dram;
 
-Request *add_req(uint32_t addr, uint32_t cycle, uint32_t origin);
+void add_req(uint32_t addr, uint32_t cycle, uint32_t origin);
 Request *queue_get_last();
 void remove_req(Request *r);
 
@@ -52,37 +52,32 @@ void dram_mc_issue_request(uint32_t addr, uint32_t cycle, Req_stage_origin origi
 void remove_req(Request *r) {
 	if (!r) exit(3);
 
-	if (r->prev != NULL)
+	if (r->prev != NULL) {
 		r->prev->next = r->next;
-	if (r == req_queue)
+		r->next->prev = r->prev;
+	} else { //r == r_queue
 		if (r->next) {
 			req_queue     = r->next;
 			r->next->prev = NULL;
 		} else
 			req_queue = NULL;
+	}
+
 	free(r);
 }
 
-Request *add_req(uint32_t addr, uint32_t cycle, uint32_t origin) {
-	Request *new_r;
-	if (req_queue == NULL) {
-		req_queue = malloc(sizeof(Request));
-		new_r     = req_queue;
-		if (!new_r) exit(3);
-		new_r->prev = NULL;
+void add_req(uint32_t addr, uint32_t cycle, uint32_t origin) {
+	Request *new_r, *last = queue_get_last();
 
-	} else {
-		new_r = malloc(sizeof(Request));
-		if (!new_r) exit(3);
-		Request *last = queue_get_last();
-		new_r->prev   = last;
-		last->next    = new_r;
-	}
+	new_r = malloc(sizeof(Request));
+
+	if (!new_r) exit(3);
 
 	new_r->addr      = addr;
 	new_r->cycle     = cycle;
 	new_r->origin    = origin;
 	new_r->next      = NULL;
+	new_r->prev      = NULL;
 	new_r->state     = REQ_UNASSIGNED;
 	new_r->cmd_index = 0;
 
@@ -90,7 +85,12 @@ Request *add_req(uint32_t addr, uint32_t cycle, uint32_t origin) {
 		new_r->cmds_to_issue[i] = NO_COMMAND;
 	}
 
-	return new_r;
+	if (last == NULL)
+		req_queue = new_r;
+	else {
+		last->next  = new_r;
+		new_r->prev = last;
+	}
 }
 
 Request *queue_get_last() {
