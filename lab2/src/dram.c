@@ -54,9 +54,12 @@ void remove_req(Request *r) {
 
 	if (r->prev != NULL)
 		r->prev->next = r->next;
-	free(r);
 	if (r == req_queue)
-		req_queue = NULL;
+		if (r->next)
+			req_queue = r->next;
+		else
+			req_queue = NULL;
+	free(r);
 }
 
 Request *add_req(uint32_t addr, uint32_t cycle, uint32_t origin) {
