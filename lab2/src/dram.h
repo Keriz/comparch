@@ -67,7 +67,7 @@ typedef struct dram_struct {
 	//since there is only 1 rank, 1 channel, lets write everything in here
 	Bank bank[NB_BANKS];
 	Bus cmd_bus, data_bus, address_bus;
-	Cache *l2, *l1d, l1i;
+	Cache *l2;
 } Dram;
 
 extern Dram dram;
