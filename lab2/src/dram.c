@@ -105,11 +105,14 @@ Scan the request queue to find the next schedulable one, if any
 */
 void dram_cycle() {
 	if (dram.cmd_bus.counter > 0) dram.cmd_bus.counter--;
+	if (dram.cmd_bus.counter == 0) dram.cmd_bus.current_req = NULL;
 	if (dram.address_bus.counter > 0) dram.address_bus.counter--;
+	if (dram.address_bus.counter == 0) dram.address_bus.current_req = NULL;
 	if (dram.data_bus.counter > 0) {
 		dram.data_bus.counter--;
 		if (dram.data_bus.counter == 0) {
 			cache_l2_fill_notification(dram.l2, dram.data_bus.current_req->addr, dram.data_bus.current_req->origin);
+			dram.bank[(dram.data_bus.current_req->addr & BANK_MASK) >> 5].current_req = NULL;
 			remove_req(dram.data_bus.current_req);
 			dram.data_bus.current_req = NULL;
 		}
@@ -168,21 +171,21 @@ void dram_cycle() {
 uint8_t dram_is_req_issuable(Request *r, uint8_t bank_index) {
 	uint32_t next_cycles_data[500] = {0}, next_cycles_cmd[500] = {0}, next_cycles_addr[500] = {0};
 
-	memset(next_cycles_data, dram.data_bus.counter * sizeof(uint32_t), 10);
-	memset(next_cycles_cmd, dram.cmd_bus.counter * sizeof(uint32_t), 10);
-	memset(next_cycles_addr, dram.address_bus.counter * sizeof(uint32_t), 10);
+	memset(next_cycles_data, 10, dram.data_bus.counter * sizeof(uint32_t));
+	memset(next_cycles_cmd, 10, dram.cmd_bus.counter * sizeof(uint32_t));
+	memset(next_cycles_addr, 10, dram.address_bus.counter * sizeof(uint32_t));
 
 	for (size_t i = 0; i < NB_BANKS; i++) {
 		Request *tmp  = dram.bank[i].current_req;
 		uint32_t cntr = dram.bank[i].counter;
 
 		if (tmp == NULL) continue;
-		for (size_t j = tmp->cmd_index; j < 4; j++) {
-			memset(next_cycles_addr + (j * 100 + cntr) * sizeof(uint32_t), 50 * sizeof(uint32_t), i + 1);
-			memset(next_cycles_cmd + (j * 100 + cntr) * sizeof(uint32_t), 50 * sizeof(uint32_t), i + 1);
+		for (size_t j = 0; j < (4 - tmp->cmd_index); j++) {
+			memset(&next_cycles_addr[j * 100 + cntr], i + 1, 4 * sizeof(uint32_t));
+			memset(&next_cycles_cmd[j * 100 + cntr], i + 1, 4 * sizeof(uint32_t));
 
 			if (tmp->cmds_to_issue[j] == READ_WRITE) {
-				memset(next_cycles_data + (j * 100 + cntr) * sizeof(uint32_t), 50 * sizeof(uint32_t), i + 1);
+				memset(&next_cycles_data[(j + 1) * 100 + cntr], i + 1, 50 * sizeof(uint32_t));
 				break;
 			}
 			//TODO: take care of the case when a req is issued at the same time the last one finished
