@@ -14,6 +14,8 @@
 #include <string.h>
 
 #include "cache.h"
+#include "dram.h"
+#include "mc_definitions.h"
 #include "mips.h"
 #include "shell.h"
 
@@ -43,6 +45,8 @@ void pipe_init() {
 	instruction_cache = cache_init(1 << 13, 32, 4);
 	data_cache        = cache_init(1 << 16, 32, 8);
 	unified_l2_cache  = cache_init(1 << 18, 32, 16);
+
+	dram_initialize(unified_l2_cache);
 }
 
 void pipe_cycle() {
@@ -64,6 +68,8 @@ void pipe_cycle() {
 	pipe_stage_execute();
 	pipe_stage_decode();
 	pipe_stage_fetch();
+
+	dram_cycle();
 
 	/* handle branch recoveries */
 	if (pipe.branch_recover) {
@@ -138,9 +144,14 @@ void pipe_stage_wb() {
 			    op->pc; /* fetch will do pc += 4, then we stop with correct PC */
 			RUN_BIT = 0;
 			//deallocate caches
-			cache_deinit(data_cache);
+			//TODO: move this at the end of the pipeline when a syscall was detected
+			/* cache_deinit(data_cache);
 			cache_deinit(instruction_cache);
 			cache_deinit(unified_l2_cache);
+			dram_deinitialize();
+			data_cache        = NULL;
+			instruction_cache = NULL;
+			unified_l2_cache  = NULL; */
 		}
 	}
 
@@ -151,7 +162,7 @@ void pipe_stage_wb() {
 }
 
 void pipe_stage_mem() {
-	static uint8_t ls_stall_counter = 0, l2_cache_state = NO_MISS;
+	static uint8_t ls_stall_counter = 0;
 
 	/* if there is no instruction in this pipeline stage, we are done */
 	if (!pipe.mem_op) return;
@@ -161,40 +172,58 @@ void pipe_stage_mem() {
 
 	if (ls_stall_counter) ls_stall_counter--;
 
-	if (!ls_stall_counter && l2_cache_state == DELAY_MEM_CONTROLLER) {
+	if (!ls_stall_counter && (data_cache->state == DELAY_MC_PIPE_MW || data_cache->state == DELAY_MC_PIPE_MR)) {
 		//request to DRAM served
-		//cache_set_done_bit(op->mem_addr); //L2 receives a fill notification
-		ls_stall_counter = 5; //after 5 cycles, the block will be inserted into the L2 cache
+		dram_mc_issue_request(op->mem_addr, stat_cycles, MEM);
+		if (data_cache->state == DELAY_MC_PIPE_MR)
+			data_cache->state = WAIT_FILL_NOTIF; //stall the pipeline if it is a read
+		else
+			data_cache->state = NO_MISS;
 		return;
 	}
 
-	if (!ls_stall_counter && l2_cache_state == CACHE_BLOCK_BEING_INSERTED) {
+	//if we are waiting for a fill notif, stall pipeline
+	if (unified_l2_cache->state == WAIT_FILL_NOTIF) return;
+
+	if (!ls_stall_counter && data_cache->state == FILL_NOTIF_RECEIVED) {
 		//after 5 cycles, the retrieved cache block is inserted into the L2 cache and MSHR is freed.
-		cache_insert(unified_l2_cache, op->mem_addr, stat_cycles);
+		ls_stall_counter = 6; //after 5 cycles, the block will be inserted into the L2 cache
+		return;
+	}
+
+	if (!ls_stall_counter && data_cache->state == INSERT_CACHE_BLOCK) {
+
+		cache_insert(unified_l2_cache, op->mem_addr);
 		cache_free_mshr(unified_l2_cache, op->mem_addr);
 		// in the same cycle, if the pipline is stalled because of the cache block, l2 sends a fill notif to l1
 		//insertion in the L1 cache
-		cache_insert(data_cache, op->mem_addr, stat_cycles);
+		cache_insert(data_cache, op->mem_addr);
 		//next cycle, pipeline unstalls
-		l2_cache_state = NO_MISS;
-		return;
+		data_cache->state = NO_MISS;
+	}
+
+	if (!ls_stall_counter && data_cache->state == CACHE_HIT_L2) {
+		//L1 receives a fill notification from L2
+		data_cache->state = NO_MISS;
+		cache_insert(data_cache, op->mem_addr);
 	}
 
 	if (!ls_stall_counter && op->is_mem)
 		if (cache_request(data_cache, op->mem_addr) == miss)
-			//if there if a free MSHR
 			if (cache_mshrs_left(unified_l2_cache)) {
 				if (cache_request(unified_l2_cache, op->mem_addr) == miss) {
 					//allocate MSHR
 					//stall 5 cycles (memory controller delay)
-					cache_allocate_mshr(unified_l2_cache, op->mem_addr);
-					cache_issue_dram_request();
+					cache_allocate_mshr(unified_l2_cache, op->mem_addr, stat_cycles, MEM);
 					ls_stall_counter = 5;
-					l2_cache_state   = DELAY_MEM_CONTROLLER;
+					if (op->mem_write)
+						data_cache->state = DELAY_MC_PIPE_MW;
+					else
+						data_cache->state = DELAY_MC_PIPE_MR;
 				} else { //L2 Cache hit
 					//after 15 cycles, send a fill notification to the according L1 cache (data or instruction)
-					ls_stall_counter = 15;
-					l2_cache_state   = CACHE_HIT;
+					ls_stall_counter  = 16;
+					data_cache->state = CACHE_HIT_L2;
 				}
 			}
 
@@ -712,29 +741,47 @@ void pipe_stage_decode() {
 }
 
 void pipe_stage_fetch() {
-	static uint8_t fetch_stall_counter = 0, fetch_l2_state = NO_MISS;
+	static uint8_t fetch_stall_counter = 0;
 	/* if pipeline is stalled (our output slot is not empty), return */
 	if (pipe.decode_op != NULL) return;
 
 	if (fetch_stall_counter) fetch_stall_counter--;
 
-	if (!fetch_stall_counter && fetch_l2_state == DELAY_MEM_CONTROLLER) {
-		//request to DRAM served
-		//cache_set_done_bit(op->mem_addr); //L2 receives a fill notification
-		fetch_stall_counter = 5; //after 5 cycles, the block will be inserted into the L2 cache
+	if (!fetch_stall_counter && instruction_cache->state == DELAY_MC_PIPE_MR) {
+		//request to main memory from L2
+		dram_mc_issue_request(pipe.PC, stat_cycles, INSTRUCTION);
+		instruction_cache->state = WAIT_FILL_NOTIF; //stall the pipeline if it is a read
 		return;
 	}
 
-	if (!fetch_stall_counter && fetch_l2_state == CACHE_BLOCK_BEING_INSERTED) {
+	//if waiting for a service by main memory..
+	if (!fetch_stall_counter && instruction_cache->state == WAIT_FILL_NOTIF) {
+		return;
+	}
+
+	if (!fetch_stall_counter && instruction_cache->state == FILL_NOTIF_RECEIVED) {
+		//L2 receives a fill notif from main memory, wait 5 cycles before proceeding
+		fetch_stall_counter      = 6;
+		instruction_cache->state = INSERT_CACHE_BLOCK;
+		return;
+	}
+
+	if (!fetch_stall_counter && instruction_cache->state == INSERT_CACHE_BLOCK) {
 		//after 5 cycles, the retrieved cache block is inserted into the L2 cache and MSHR is freed.
-		cache_insert(unified_l2_cache, pipe.PC, stats_cycle);
+		cache_insert(unified_l2_cache, pipe.PC);
 		cache_free_mshr(unified_l2_cache, pipe.PC);
 		// in the same cycle, if the pipline is stalled because of the cache block, l2 sends a fill notif to l1
 		//insertion in the L1 cache
-		cache_insert(instruction_cache, pipe.PC, stats_cycle);
+		cache_insert(instruction_cache, pipe.PC);
 		//next cycle, pipeline unstalls
-		fetch_l2_state = NO_MISS;
+		instruction_cache->state = NO_MISS;
 		return;
+	}
+
+	if (!fetch_stall_counter && instruction_cache->state == CACHE_HIT_L2) {
+		//L1 receives a fill notification from L2
+		instruction_cache->state = NO_MISS;
+		cache_insert(instruction_cache, pipe.PC);
 	}
 
 	if (!fetch_stall_counter) {
@@ -744,17 +791,18 @@ void pipe_stage_fetch() {
 				if (cache_request(unified_l2_cache, pipe.PC) == miss) {
 					//allocate MSHR
 					//stall 5 cycles (memory controller delay)
-					cache_allocate_mshr(unified_l2_cache, pipe.PC);
-					fetch_stall_counter = 5;
-					//l2_cache_state   = DELAY_MEM_CONTROLLER;
+					cache_allocate_mshr(unified_l2_cache, pipe.PC, stat_cycles, INSTRUCTION);
+
+					fetch_stall_counter = 6;
+
+					instruction_cache->state = DELAY_MC_PIPE_MR;
 				} else { //L2 Cache hit
 					//after 15 cycles, send a fill notification to the according L1 cache (data or instruction)
-					fetch_stall_counter = 15;
-					//l2_cache_state   = CACHE_HIT;
+					fetch_stall_counter      = 16;
+					instruction_cache->state = CACHE_HIT_L2;
 				}
 			}
 		}
-		fetch_stall_counter = 51;
 	}
 	if (fetch_stall_counter > 1) {
 		if (RUN_BIT == 0)
