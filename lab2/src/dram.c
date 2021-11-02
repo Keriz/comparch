@@ -13,8 +13,8 @@ void remove_req(Request *r);
 
 void dram_access(Request *r);
 uint8_t dram_is_req_issuable(Request *r, uint8_t bank_index);
-void dram_issue_command(Request *r, uint8_t bank_index);
-Row_buffer_states dram_rb_actions(uint8_t bank_i, uint32_t row);
+void dram_issue_command(Request *r, size_t bank_index);
+Row_buffer_states dram_rb_actions(size_t bank_i, uint32_t row);
 Request *fr_fcfs_policy(size_t bank_i);
 
 void dram_initialize(Cache *l2) {
@@ -42,6 +42,7 @@ void dram_deinitialize() {
 
 void dram_mc_issue_request(uint32_t addr, uint32_t cycle, Req_stage_origin origin) {
 	//create request
+
 	add_req(addr, cycle, origin);
 	/* 
 	switch ()
@@ -225,7 +226,7 @@ uint8_t dram_is_req_issuable(Request *r, uint8_t bank_index) {
 	return 1;
 }
 
-void dram_issue_command(Request *r, uint8_t bank_index) {
+void dram_issue_command(Request *r, size_t bank_index) {
 	dram.cmd_bus.counter         = 4;
 	dram.address_bus.counter     = 4;
 	dram.cmd_bus.current_req     = r;
@@ -240,8 +241,7 @@ void dram_issue_command(Request *r, uint8_t bank_index) {
 			break;
 	} */
 
-	dram.bank[bank_index]
-	    .lastcmd                     = r->cmds_to_issue[r->cmd_index];
+	dram.bank[bank_index].lastcmd    = r->cmds_to_issue[r->cmd_index];
 	dram.bank[bank_index].row_buffer = r->addr & ROW_MASK;
 	dram.bank[bank_index].counter    = 100;
 
@@ -284,7 +284,7 @@ Request *fr_fcfs_policy(size_t bank_i) {
 	for (size_t i = 0; i < nb_req; i++) {
 		uint8_t row = (bank_req[i]->addr & ROW_MASK) >> 16;
 		if (dram_rb_actions(bank_i, row) == RB_HIT) {
-			row_buffer_hits[nb_hits] = r;
+			row_buffer_hits[nb_hits] = bank_req[i];
 			nb_hits++;
 		}
 	}
@@ -318,7 +318,7 @@ Request *fr_fcfs_policy(size_t bank_i) {
 	return r_to_schedule;
 }
 
-Row_buffer_states dram_rb_actions(uint8_t bank_index, uint32_t row) {
+Row_buffer_states dram_rb_actions(size_t bank_index, uint32_t row) {
 	if (dram.bank[bank_index].row_buffer == row)
 		return RB_HIT;
 	else if (dram.bank[bank_index].row_buffer == ROW_CLOSED)
