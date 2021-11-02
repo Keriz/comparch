@@ -172,7 +172,6 @@ void cache_allocate_mshr(Cache *c, uint32_t addr, uint32_t cycle, Req_stage_orig
 			c->mshrs[i].addr_cache_block_miss = addr & BLOCK_MASK;
 			c->mshrs[i].done_bit              = 0;
 			c->mshrs[i].valid_bit             = 0;
-			dram_mc_issue_request(addr, cycle, origin);
 			return;
 		}
 	}
