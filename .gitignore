@@ -19,3 +19,5 @@ lab2/inputs/benchmarking/*/*.s
 lab2/inputs/benchmarking/*/*.x
 *.trace
 lab2/todo.txt
+lab3/obj/*
+lab3/ramulator
