@@ -23,6 +23,7 @@ public:
     // [# of bubbles(non-mem instructions)] [read address(dec or hex)] <optional: write address(evicted cacheline)>
     bool get_unfiltered_request(long& bubble_cnt, long& req_addr, Request::Type& req_type);
     bool get_filtered_request(long& bubble_cnt, long& req_addr, Request::Type& req_type);
+    bool get_filtered_request2(long& bubble_cnt, long& req_addr, Request::Type& req_type);
     // trace file format 2:
     // [address(hex)] [R/W]
     bool get_dramtrace_request(long& req_addr, Request::Type& req_type);
@@ -37,8 +38,8 @@ private:
 
 class Window {
 public:
-    int ipc = 4;
-    int depth = 128;
+    int ipc = 3;
+    int depth = 32;
 
     Window() : ready_list(depth), addr_list(depth, -1) {}
     bool is_full();

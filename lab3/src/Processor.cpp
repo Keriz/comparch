@@ -1,5 +1,7 @@
 #include "Processor.h"
 #include <cassert>
+#include <stdexcept>
+#include <sstream>
 
 using namespace std;
 using namespace ramulator;
@@ -168,7 +170,7 @@ Core::Core(const Config& configs, int coreid,
     first_level_cache = caches[1].get();
   }
   if (no_core_caches) {
-    more_reqs = trace.get_filtered_request(
+    more_reqs = trace.get_filtered_request2(
         bubble_cnt, req_addr, req_type);
     req_addr = memory.page_allocator(req_addr, id);
   } else {
@@ -263,7 +265,7 @@ void Core::tick()
     }
 
     if (no_core_caches) {
-      more_reqs = trace.get_filtered_request(
+      more_reqs = trace.get_filtered_request2(
           bubble_cnt, req_addr, req_type);
       if (req_addr != -1) {
         req_addr = memory.page_allocator(req_addr, id);
@@ -390,7 +392,7 @@ bool Trace::get_unfiltered_request(long& bubble_cnt, long& req_addr, Request::Ty
       file.clear();
       file.seekg(0, file.beg);
       getline(file, line);
-      //return false;
+      return false;
     }
     size_t pos, end;
     bubble_cnt = std::stoul(line, &pos, 10);
@@ -450,6 +452,71 @@ bool Trace::get_filtered_request(long& bubble_cnt, long& req_addr, Request::Type
         write_addr = stoul(line.substr(pos), NULL, 0);
     }
     return true;
+}
+
+bool Trace::get_filtered_request2(long& bubble_cnt, long& req_addr, Request::Type& req_type) {
+
+	string linebuffer;
+
+    if(!getline(file, linebuffer)){
+      if (linebuffer.length() == 0){
+          if (expected_limit_insts == 0) return false;
+          else{
+            if(file.eof()) {
+              file.clear();
+              file.seekg(0, file.beg);
+
+              getline(file, linebuffer);
+            }
+            else{
+              cerr << "Error while parsing file \n";
+              exit(1);
+            }
+          }
+      }
+
+    }
+
+    vector<string> tokens;
+
+		istringstream iss(linebuffer);
+		for(string token; iss >> token;)
+			tokens.push_back(token);
+	
+		try{
+            if(tokens.size() < 5){
+                req_addr = -1;
+                return true;
+            }
+            int type_position = 0;
+            for(int i = 0; i < tokens.size(); i++){
+                if((tokens[i] == "L") || (tokens[i] == "S")){
+                    type_position = i;
+                    break;
+                }
+            }
+            if((type_position >= 3) && ((type_position+1) < tokens.size())){
+                if(tokens[type_position - 1] != "-")
+                    bubble_cnt = std::stoi(tokens[type_position - 1],nullptr,10);
+                else
+                    bubble_cnt = 0;
+                req_addr = std::stoul(tokens[type_position + 1], nullptr, 10);
+
+                if (tokens[type_position] == "L") req_type = Request::Type::READ;
+                else if (tokens[type_position] == "S") req_type = Request::Type::WRITE;
+            }
+            else{
+                req_addr = -1;
+                return true;
+            }
+        }
+        catch(std::exception e){
+            req_addr = -1;
+            return true;
+        }
+        return true;
+  
+
 }
 
 bool Trace::get_dramtrace_request(long& req_addr, Request::Type& req_type)
