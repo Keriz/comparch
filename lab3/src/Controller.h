@@ -93,18 +93,28 @@ class Controller {
 	float wr_high_watermark = 0.8f;  // threshold for switching to write mode
 	float wr_low_watermark  = 0.2f;  // threshold for switching back to read mode
 	long quantum_length     = 10000000;
+	vector<int> bank_ref_counters;
 
 	//long refreshed = 0;  // last time refresh requests were generated
 
 	/* Command trace for DRAMPower 3.1 */
 	string cmd_trace_prefix = "cmd-trace-";
 	vector<ofstream> cmd_trace_files;
+
+	//ATLAS Scheduler policy
 	long *las_rank;
 	int num_cores;
 
-	bool record_cmd_trace = false;
+	//BLISS_policy
+	long req_served_counter = 0;
+	int application_id      = 0;
+	int bliss_threshold     = 4;
+	long bliss_reset_period = 10000; //clock cycles
+	vector<bool> blacklisted_id;
+
 	/* Commands to stdout */
-	bool print_cmd_trace = false;
+	bool record_cmd_trace = false;
+	bool print_cmd_trace  = false;
 
 	/* Constructor */
 	Controller(const Config &configs, DRAM<T> *channel) : num_cores(configs.get_core_num()),
@@ -115,6 +125,8 @@ class Controller {
 	                                                      rowtable(new RowTable<T>(this)),
 	                                                      refresh(new Refresh<T>(this)),
 	                                                      cmd_trace_files(channel->children.size()) {
+
+		blacklisted_id.resize(num_cores, 0);
 
 		record_cmd_trace = configs.record_cmd_trace();
 		print_cmd_trace  = configs.print_cmd_trace();
@@ -422,6 +434,22 @@ class Controller {
 					++row_misses;
 				}
 				write_transaction_bytes += tx;
+			}
+		}
+		//BLISS policy
+		if (req->coreid != application_id)
+			application_id = req->coreid;
+		else
+			req_served_counter++;
+
+		if (req_served_counter == bliss_threshold) {
+			req_served_counter             = 0;
+			blacklisted_id[application_id] = 1;
+		}
+
+		if ((clk % bliss_reset_period) == 0) {
+			for (auto item = begin(blacklisted_id); item != end(blacklisted_id); ++item) {
+				*item = 0;
 			}
 		}
 

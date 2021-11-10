@@ -74,6 +74,7 @@ class Scheduler {
 		FRFCFS_Cap,
 		FRFCFS_PriorHit,
 		ATLAS,
+		BLISS,
 		MAX
 	} type = Type::FCFS; //Change this line to change scheduling policy
 
@@ -166,49 +167,49 @@ class Scheduler {
 	function<ReqIter(ReqIter, ReqIter)> compare[int(Type::MAX)] = {
 	    // FCFS
 	    [this](ReqIter req1, ReqIter req2) {
-            if (req1->arrive <= req2->arrive) return req1;
-            return req2; },
+		if (req1->arrive <= req2->arrive) return req1;
+		return req2; },
 
 	    // FRFCFS
 	    [this](ReqIter req1, ReqIter req2) {
-            bool ready1 = this->ctrl->is_ready(req1);
-            bool ready2 = this->ctrl->is_ready(req2);
+		bool ready1 = this->ctrl->is_ready(req1);
+		bool ready2 = this->ctrl->is_ready(req2);
 
-            if (ready1 ^ ready2) {
-                if (ready1) return req1;
-                return req2;
-            }
+		if (ready1 ^ ready2) {
+			if (ready1) return req1;
+			return req2;
+		}
 
-            if (req1->arrive <= req2->arrive) return req1;
-            return req2; },
+		if (req1->arrive <= req2->arrive) return req1;
+		return req2; },
 
 	    // FRFCFS_CAP
 	    [this](ReqIter req1, ReqIter req2) {
-            bool ready1 = this->ctrl->is_ready(req1);
-            bool ready2 = this->ctrl->is_ready(req2);
+		bool ready1 = this->ctrl->is_ready(req1);
+		bool ready2 = this->ctrl->is_ready(req2);
 
-            ready1 = ready1 && (this->ctrl->rowtable->get_hits(req1->addr_vec) <= this->cap);
-            ready2 = ready2 && (this->ctrl->rowtable->get_hits(req2->addr_vec) <= this->cap);
+		ready1 = ready1 && (this->ctrl->rowtable->get_hits(req1->addr_vec) <= this->cap);
+		ready2 = ready2 && (this->ctrl->rowtable->get_hits(req2->addr_vec) <= this->cap);
 
-            if (ready1 ^ ready2) {
-                if (ready1) return req1;
-                return req2;
-            }
+		if (ready1 ^ ready2) {
+			if (ready1) return req1;
+			return req2;
+		}
 
-            if (req1->arrive <= req2->arrive) return req1;
-            return req2; },
+		if (req1->arrive <= req2->arrive) return req1;
+		return req2; },
 	    // FRFCFS_PriorHit
 	    [this](ReqIter req1, ReqIter req2) {
-            bool ready1 = this->ctrl->is_ready(req1) && this->ctrl->is_row_hit(req1);
-            bool ready2 = this->ctrl->is_ready(req2) && this->ctrl->is_row_hit(req2);
+		bool ready1 = this->ctrl->is_ready(req1) && this->ctrl->is_row_hit(req1);
+		bool ready2 = this->ctrl->is_ready(req2) && this->ctrl->is_row_hit(req2);
 
-            if (ready1 ^ ready2) {
-                if (ready1) return req1;
-                return req2;
-            }
+		if (ready1 ^ ready2) {
+			if (ready1) return req1;
+			return req2;
+		}
 
-            if (req1->arrive <= req2->arrive) return req1;
-            return req2; },
+		if (req1->arrive <= req2->arrive) return req1;
+		return req2; },
 
 	    // ATLAS
 	    /*
@@ -224,11 +225,8 @@ class Scheduler {
 		*/
 
 	    [this](ReqIter req1, ReqIter req2) {
-		    bool ready1 = this->ctrl->is_ready(req1);
-		    bool ready2 = this->ctrl->is_ready(req2);
-
-		    bool overThreshold1 = ready1 && (req1->arrive > threshold);
-		    bool overThreshold2 = ready2 && (req2->arrive > threshold);
+		    bool overThreshold1 = req1->arrive > threshold;
+		    bool overThreshold2 = req2->arrive > threshold;
 
 		    if (overThreshold1 ^ overThreshold2) {
 			    if (overThreshold1)
@@ -236,10 +234,10 @@ class Scheduler {
 			    return req2;
 		    }
 
-		    if (this->ctrl->las_rank[req1.coreid] == this->ctrl->las_rank[req2.coreid]) {
+		    if (this->ctrl->las_rank[req1->coreid] == this->ctrl->las_rank[req2->coreid]) {
 
-			    bool hit1 = ready1 && this->ctrl->is_row_hit(req1);
-			    bool hit2 = ready2 && this->ctrl->is_row_hit(req2);
+			    bool hit1 = this->ctrl->is_row_hit(req1);
+			    bool hit2 = this->ctrl->is_row_hit(req2);
 
 			    if (hit1 ^ hit2) {
 				    if (hit1) return req1;
@@ -248,8 +246,37 @@ class Scheduler {
 
 			    if (req1->arrive <= req2->arrive) return req1;
 			    return req2;
-		    } else if (this->ctrl->las_rank[req1.coreid] > this->ctrl->las_rank[req2.coreid])
+		    } else if (this->ctrl->las_rank[req1->coreid] > this->ctrl->las_rank[req2->coreid])
 			    return req1;
+		    return req2;
+	    },
+
+	    //BLISS
+	    //Blacklisting treshold = 4, Clearing Interval = 10K cycles).
+
+	    /*  1) Non-blacklisted applications’ requests
+			2) Row-buffer hit requests
+			3) Older requests 
+		*/
+
+	    [this](ReqIter req1, ReqIter req2) {
+		    bool blacklisted1 = this->ctrl->blacklisted_id[req1->coreid];
+		    bool blacklisted2 = this->ctrl->blacklisted_id[req2->coreid];
+
+		    if (blacklisted1 ^ blacklisted2) {
+			    if (blacklisted2) return req1;
+			    return req2;
+		    }
+
+		    bool hit1 = this->ctrl->is_row_hit(req1);
+		    bool hit2 = this->ctrl->is_row_hit(req2);
+
+		    if (hit1 ^ hit2) {
+			    if (hit1) return req1;
+			    return req2;
+		    }
+
+		    if (req1->arrive <= req2->arrive) return req1;
 		    return req2;
 	    }};
 };
