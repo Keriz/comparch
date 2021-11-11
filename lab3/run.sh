@@ -10,8 +10,6 @@ case $POLICY in
 
     ./ramulator configs/DDR4-config.cfg --mode=cpu --stats  FCFS_HHLL.stats ./traces/high-mem-intensity.trace ./traces/high-mem-intensity.trace ./traces/low-mem-intensity.trace ./traces/low-mem-intensity.trace
 
-    ./ramulator configs/DDR4-config.cfg --mode=cpu --stats  FCFS_HHHL.stats ./traces/high-mem-intensity.trace ./traces/high-mem-intensity.trace ./traces/high-mem-intensity.trace ./traces/low-mem-intensity.trace
-
     ./ramulator configs/DDR4-config.cfg --mode=cpu --stats  FCFS_HHHH.stats ./traces/high-mem-intensity.trace ./traces/high-mem-intensity.trace ./traces/high-mem-intensity.trace ./traces/high-mem-intensity.trace
 
     ./ramulator configs/DDR4-config.cfg --mode=cpu --stats  FCFS_HHHHHHHH.stats ./traces/high-mem-intensity.trace ./traces/high-mem-intensity.trace ./traces/high-mem-intensity.trace ./traces/high-mem-intensity.trace ./traces/high-mem-intensity.trace ./traces/high-mem-intensity.trace ./traces/high-mem-intensity.trace ./traces/high-mem-intensity.trace
@@ -22,8 +20,6 @@ case $POLICY in
     ./ramulator configs/DDR4-config.cfg --mode=cpu --stats  FRFCFS_HLLL.stats ./traces/high-mem-intensity.trace ./traces/low-mem-intensity.trace ./traces/low-mem-intensity.trace ./traces/low-mem-intensity.trace
 
     ./ramulator configs/DDR4-config.cfg --mode=cpu --stats  FRFCFS_HHLL.stats ./traces/high-mem-intensity.trace ./traces/high-mem-intensity.trace ./traces/low-mem-intensity.trace ./traces/low-mem-intensity.trace
-
-    ./ramulator configs/DDR4-config.cfg --mode=cpu --stats  FRFCFS_HHHL.stats ./traces/high-mem-intensity.trace ./traces/high-mem-intensity.trace ./traces/high-mem-intensity.trace ./traces/low-mem-intensity.trace
 
     ./ramulator configs/DDR4-config.cfg --mode=cpu --stats  FRFCFS_HHHH.stats ./traces/high-mem-intensity.trace ./traces/high-mem-intensity.trace ./traces/high-mem-intensity.trace ./traces/high-mem-intensity.trace
 
@@ -36,8 +32,6 @@ case $POLICY in
 
     ./ramulator configs/DDR4-config.cfg --mode=cpu --stats  FRFCFS_Cap_HHLL.stats ./traces/high-mem-intensity.trace ./traces/high-mem-intensity.trace ./traces/low-mem-intensity.trace ./traces/low-mem-intensity.trace
 
-    ./ramulator configs/DDR4-config.cfg --mode=cpu --stats  FRFCFS_Cap_HHHL.stats ./traces/high-mem-intensity.trace ./traces/high-mem-intensity.trace ./traces/high-mem-intensity.trace ./traces/low-mem-intensity.trace
-
     ./ramulator configs/DDR4-config.cfg --mode=cpu --stats  FRFCFS_Cap_HHHH.stats ./traces/high-mem-intensity.trace ./traces/high-mem-intensity.trace ./traces/high-mem-intensity.trace ./traces/high-mem-intensity.trace
 
     ./ramulator configs/DDR4-config.cfg --mode=cpu --stats  FRFCFS_Cap_HHHHHHHH.stats ./traces/high-mem-intensity.trace ./traces/high-mem-intensity.trace ./traces/high-mem-intensity.trace ./traces/high-mem-intensity.trace ./traces/high-mem-intensity.trace ./traces/high-mem-intensity.trace ./traces/high-mem-intensity.trace ./traces/high-mem-intensity.trace
@@ -48,8 +42,6 @@ case $POLICY in
     ./ramulator configs/DDR4-config.cfg --mode=cpu --stats  ATLAS_HLLL.stats ./traces/high-mem-intensity.trace ./traces/low-mem-intensity.trace ./traces/low-mem-intensity.trace ./traces/low-mem-intensity.trace
 
     ./ramulator configs/DDR4-config.cfg --mode=cpu --stats  ATLAS_HHLL.stats ./traces/high-mem-intensity.trace ./traces/high-mem-intensity.trace ./traces/low-mem-intensity.trace ./traces/low-mem-intensity.trace
-
-    ./ramulator configs/DDR4-config.cfg --mode=cpu --stats  ATLAS_HHHL.stats ./traces/high-mem-intensity.trace ./traces/high-mem-intensity.trace ./traces/high-mem-intensity.trace ./traces/low-mem-intensity.trace
 
     ./ramulator configs/DDR4-config.cfg --mode=cpu --stats  ATLAS_HHHH.stats ./traces/high-mem-intensity.trace ./traces/high-mem-intensity.trace ./traces/high-mem-intensity.trace ./traces/high-mem-intensity.trace
 
@@ -62,8 +54,6 @@ case $POLICY in
     ./ramulator configs/DDR4-config.cfg --mode=cpu --stats  BLISS_HLLL.stats ./traces/high-mem-intensity.trace ./traces/low-mem-intensity.trace ./traces/low-mem-intensity.trace ./traces/low-mem-intensity.trace
 
     ./ramulator configs/DDR4-config.cfg --mode=cpu --stats  BLISS_HHLL.stats ./traces/high-mem-intensity.trace ./traces/high-mem-intensity.trace ./traces/low-mem-intensity.trace ./traces/low-mem-intensity.trace
-
-    ./ramulator configs/DDR4-config.cfg --mode=cpu --stats  BLISS_HHHL.stats ./traces/high-mem-intensity.trace ./traces/high-mem-intensity.trace ./traces/high-mem-intensity.trace ./traces/low-mem-intensity.trace
 
     ./ramulator configs/DDR4-config.cfg --mode=cpu --stats  BLISS_HHHH.stats ./traces/high-mem-intensity.trace ./traces/high-mem-intensity.trace ./traces/high-mem-intensity.trace ./traces/high-mem-intensity.trace
 
