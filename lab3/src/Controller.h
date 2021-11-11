@@ -92,7 +92,6 @@ class Controller {
 	bool write_mode         = false; // whether write requests should be prioritized over reads
 	float wr_high_watermark = 0.8f;  // threshold for switching to write mode
 	float wr_low_watermark  = 0.2f;  // threshold for switching back to read mode
-	long quantum_length     = 10000000;
 	vector<int> bank_ref_counters;
 
 	//long refreshed = 0;  // last time refresh requests were generated
@@ -102,7 +101,8 @@ class Controller {
 	vector<ofstream> cmd_trace_files;
 
 	//ATLAS Scheduler policy
-	long *las_rank;
+	vector<int> local_las_ranks;
+	vector<int> meta_las_ranks;
 	int num_cores;
 
 	//BLISS_policy
@@ -118,14 +118,14 @@ class Controller {
 
 	/* Constructor */
 	Controller(const Config &configs, DRAM<T> *channel) : num_cores(configs.get_core_num()),
-	                                                      las_rank(new long[configs.get_core_num()]),
 	                                                      channel(channel),
 	                                                      scheduler(new Scheduler<T>(this)),
 	                                                      rowpolicy(new RowPolicy<T>(this)),
 	                                                      rowtable(new RowTable<T>(this)),
 	                                                      refresh(new Refresh<T>(this)),
 	                                                      cmd_trace_files(channel->children.size()) {
-
+		local_las_ranks.resize(num_cores, 0);
+		meta_las_ranks.resize(num_cores, 0);
 		blacklisted_id.resize(num_cores, 0);
 
 		record_cmd_trace = configs.record_cmd_trace();
@@ -308,7 +308,7 @@ class Controller {
 			return false;
 
 		req.arrive = clk;
-		las_rank[req.coreid]++;
+		local_las_ranks[req.coreid]++;
 
 		queue.q.push_back(req);
 		// shortcut for read requests, if a write to same addr exists
@@ -327,12 +327,6 @@ class Controller {
 		req_queue_length_sum += readq.size() + writeq.size() + pending.size();
 		read_req_queue_length_sum += readq.size() + pending.size();
 		write_req_queue_length_sum += writeq.size();
-
-		if (!(clk % quantum_length)) {
-			for (auto index = 0; index < num_cores; index++) {
-				las_rank[index] = 0;
-			}
-		}
 
 		/*** 1. Serve completed reads ***/
 		if (pending.size()) {

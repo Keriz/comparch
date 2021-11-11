@@ -234,7 +234,7 @@ class Scheduler {
 			    return req2;
 		    }
 
-		    if (this->ctrl->las_rank[req1->coreid] == this->ctrl->las_rank[req2->coreid]) {
+		    if (this->ctrl->meta_las_ranks[req1->coreid] == this->ctrl->meta_las_ranks[req2->coreid]) {
 
 			    bool hit1 = this->ctrl->is_row_hit(req1);
 			    bool hit2 = this->ctrl->is_row_hit(req2);
@@ -246,7 +246,7 @@ class Scheduler {
 
 			    if (req1->arrive <= req2->arrive) return req1;
 			    return req2;
-		    } else if (this->ctrl->las_rank[req1->coreid] > this->ctrl->las_rank[req2->coreid])
+		    } else if (this->ctrl->meta_las_ranks[req1->coreid] > this->ctrl->meta_las_ranks[req2->coreid])
 			    return req1;
 		    return req2;
 	    },
