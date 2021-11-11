@@ -52,7 +52,8 @@ Processor::Processor(const Config &configs,
 
 	instruction_throughput.name("instruction_throughput")
 	    .desc("sum of all instructions retired in eachcore divided by the total number of cpu cycles it took to complete")
-	    .precision(0);
+	    .precision(2);
+	instruction_throughput = 0;
 }
 
 void Processor::tick() {
@@ -88,18 +89,15 @@ void Processor::receive(Request &req) {
 }
 
 bool Processor::finished() {
-	long total_instr = 0;
 	if (early_exit) {
 		for (unsigned int i = 0; i < cores.size(); ++i) {
 			if (cores[i]->finished()) {
 				for (unsigned int j = 0; j < cores.size(); ++j) {
 					ipc += cores[j]->calc_ipc();
-					total_instr += cores[j]->retired;
 				}
 				return true;
 			}
 		}
-		instruction_throughput = total_instr / cores.size();
 		return false;
 	} else {
 		for (unsigned int i = 0; i < cores.size(); ++i) {
@@ -109,20 +107,21 @@ bool Processor::finished() {
 			if (ipcs[i] < 0) {
 				ipcs[i] = cores[i]->calc_ipc();
 				ipc += ipcs[i];
-				total_instr += cores[i]->retired;
 			}
 		}
-		instruction_throughput = total_instr / cores.size();
 		return true;
 	}
 }
 
 bool Processor::has_reached_limit() {
+	long total_retired = 0;
 	for (unsigned int i = 0; i < cores.size(); ++i) {
 		if (!cores[i]->has_reached_limit()) {
 			return false;
 		}
+		total_retired += cores[i]->retired;
 	}
+	instruction_throughput = (double)total_retired / cpu_cycles.value();
 	return true;
 }
 
@@ -140,8 +139,8 @@ void Processor::reset_stats() {
 		cores[i]->reset_stats();
 	}
 
-	ipc                    = 0;
-	instruction_throughput = 0;
+	ipc = 0;
+	//instruction_throughput = 0;
 
 	for (unsigned int i = 0; i < ipcs.size(); i++)
 		ipcs[i] = -1;
