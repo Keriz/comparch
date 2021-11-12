@@ -2,6 +2,9 @@
 
 POLICY=BLISS
 
+./ramulator configs/DDR4-config.cfg --mode=cpu --stats  high.stats ./traces/high-mem-intensity.trace 
+./ramulator configs/DDR4-config.cfg --mode=cpu --stats  low.stats ./traces/low-mem-intensity.trace 
+
 case $POLICY in
 
     FCFS)
