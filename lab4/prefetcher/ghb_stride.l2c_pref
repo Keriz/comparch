@@ -13,20 +13,44 @@
  */
 
 #include "cache.h"
+#include <vector>
 
-#define GHB_SIZE           256
-#define IT_SIZE            256
-#define PREFETCH_DEGREE    4
-#define PREFETCH_LOOKAHEAD 4
+#define GHB_SIZE 256
+#define IT_SIZE  256
 
 #define GHB_INVALID_ENTRY -1
+
+#define PREF_ACCUR_HIGH 0.75f
+#define PREF_ACCUR_LOW  0.4f
+
+#define PREF_LATENESS_LATE 0.01f
 
 typedef struct GHB_t {
 	uint64_t cl        = 0;
 	int16_t prev_entry = 0;
 } GHB;
 
-uint16_t GHB_index = 0;
+typedef struct aggressiveness {
+	uint8_t distance;
+	uint8_t degree;
+} Pref_Aggr;
+
+//DISTANCE, DEGREE
+Pref_Aggr pref_aggressiveness[5] = {
+    {4, 1},  //Very Conservative
+    {8, 1},  //Conservative
+    {16, 2}, //Middle-of-the-Road
+    {32, 4}, //Aggressive
+    {48, 4}  //Very aggressive
+};
+
+uint16_t GHB_index  = 0;
+uint64_t counter    = 0;
+uint64_t pref_total = 0, used_total = 0, late_pref = 0, pref_aggr_cntr = 0;
+
+double pref_accuracy = 0, pref_lateness = 0;
+
+vector<uint64_t> pref_addresses;
 
 typedef struct It_t {
 	int16_t ghb_entry = 0;
@@ -44,10 +68,42 @@ void CACHE::l2c_prefetcher_initialize() {
 }
 
 uint32_t CACHE::l2c_prefetcher_operate(uint64_t addr, uint64_t ip, uint8_t cache_hit, uint8_t type, uint32_t metadata_in) {
+	counter++;
+
+	if ((counter % 1000) == 0) {
+		counter = 0;
+		if ((pref_total != 0) && (used_total != 0)) {
+
+			pref_accuracy = (double)((double)used_total / (double)pref_total);
+			pref_lateness = (double)((double)late_pref / (double)used_total);
+			printf("pref_accuracy= %f\n", pref_accuracy);
+			printf("pref_lateness= %f\n", pref_lateness);
+
+			if (pref_accuracy > PREF_ACCUR_HIGH) {
+				if (pref_lateness > PREF_LATENESS_LATE)
+					pref_aggr_cntr++;
+			} else if (pref_accuracy < PREF_ACCUR_LOW) {
+				if (pref_lateness > PREF_LATENESS_LATE)
+					pref_aggr_cntr--;
+			} else {
+				if (pref_lateness > PREF_LATENESS_LATE)
+					pref_aggr_cntr++;
+			}
+		}
+
+		late_pref  = 0;
+		used_total = 0;
+		pref_total = 0;
+	}
+
+	if (!cache_hit)
+		for (size_t i = 0; i < pref_addresses.size(); i++)
+			if (pref_addresses[i] == addr)
+				late_pref++;
+
 	// check for a tracker hit
 	uint64_t cl_addr = addr >> LOG2_BLOCK_SIZE;
 	uint64_t ip_mask = ip & 0xff;
-	// uint64_t ip_tag  = (ip >> 2) & 0xff;
 
 	gh_buffer[GHB_index].cl = cl_addr;
 
@@ -65,7 +121,7 @@ uint32_t CACHE::l2c_prefetcher_operate(uint64_t addr, uint64_t ip, uint8_t cache
 	uint64_t last_access[3] = {0};
 
 	last_access[0] = gh_buffer[GHB_index].cl;
-	printf("GHB_Index%d, prev:%d\n", GHB_index, gh_buffer[GHB_index].prev_entry);
+	//printf("GHB_Index%d, prev:%d\n", GHB_index, gh_buffer[GHB_index].prev_entry);
 
 	if (gh_buffer[GHB_index].prev_entry != GHB_INVALID_ENTRY) {
 		last_access[1] = gh_buffer[gh_buffer[GHB_index].prev_entry].cl;
@@ -96,15 +152,17 @@ uint32_t CACHE::l2c_prefetcher_operate(uint64_t addr, uint64_t ip, uint8_t cache
 
 		if (previous_stride == stride) {
 			//issue prefetch request to cache line A + ld
-			for (size_t i = 0; i < PREFETCH_DEGREE; i++) {
+			for (size_t i = 0; i < pref_aggressiveness[pref_aggr_cntr].degree; i++) {
 
-				uint64_t pf_address = (cl_addr + PREFETCH_LOOKAHEAD * (stride * (i + 1))) << LOG2_BLOCK_SIZE;
+				uint64_t pf_address = (cl_addr + pref_aggressiveness[pref_aggr_cntr].distance * (stride * (i + 1))) << LOG2_BLOCK_SIZE;
 
 				// only issue a prefetch if the prefetch address is in the same 4 KB page
 				// as the current demand access address
 				if ((pf_address >> LOG2_PAGE_SIZE) != (addr >> LOG2_PAGE_SIZE))
 					break;
 
+				pref_total += 1;
+				pref_addresses.push_back(pf_address);
 				prefetch_line(ip, addr, pf_address, FILL_L2, 0);
 			}
 		}
@@ -117,6 +175,23 @@ uint32_t CACHE::l2c_prefetcher_operate(uint64_t addr, uint64_t ip, uint8_t cache
 }
 
 uint32_t CACHE::l2c_prefetcher_cache_fill(uint64_t addr, uint32_t set, uint32_t way, uint8_t prefetch, uint64_t evicted_addr, uint32_t metadata_in) {
+	for (size_t i = 0; i < pref_addresses.size(); i++) {
+		if (pref_addresses[i] == evicted_addr) {
+			pref_addresses.erase(pref_addresses.begin() + i);
+			break;
+		} else if (pref_addresses[i] == addr) {
+			//printf("used\n");
+			pref_addresses.erase(pref_addresses.begin() + i);
+			used_total++;
+			break;
+		}
+	}
+
+	/* 	for (size_t i = 0; i < pref_addresses.size(); i++)
+		if (pref_addresses[i] == addr) {
+		
+		} */
+
 	return metadata_in;
 }
 
