@@ -22,3 +22,8 @@ lab2/todo.txt
 lab3/obj/*
 lab3/ramulator
 lab3/*.stats
+*.xz
+Lab4/LICENSE
+Lab4/Readme.old
+Lab4/bin
+Lab4/obj
