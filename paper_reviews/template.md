@@ -43,7 +43,17 @@
 
 ==+== D. Comments for author
 
+# Strength
 
+-
+-
+-
+
+# Weaknesses
+
+-
+-
+-
 
 ==+== E. Comments for PC
 ==-== Hidden from authors.
