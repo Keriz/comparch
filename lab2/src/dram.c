@@ -253,11 +253,13 @@ void dram_issue_command(Request *r, size_t bank_index) {
 2. Requests that arrived earlier are prioritized over others
 3. Requests coming from the memory stage are priorized over others
 */
+Request *bank_req[1000]        = {NULL};
+Request *row_buffer_hits[1000] = {NULL};
 Request *fr_fcfs_policy(size_t bank_i) {
 	Request *r_to_schedule = NULL, *r = req_queue;
-	Request *bank_req[1000]        = {NULL};
-	Request *row_buffer_hits[1000] = {NULL};
 	uint32_t nb_hits = 0, nb_req = 0;
+	memset(bank_req, 0, 1000 * sizeof(Request *));
+	memset(row_buffer_hits, 0, 1000 * sizeof(Request *));
 
 	if (!r) return NULL; //no requests to take care of
 
