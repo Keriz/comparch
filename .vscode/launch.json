@@ -10,7 +10,7 @@
             "request": "launch",
             "program": "${workspaceRoot}\\lab2\\sim.exe",
             "args": [
-                "${workspaceRoot}/lab2/inputs/custom/test1.x"
+                "${workspaceRoot}/lab2/inputs/cache/test1.x"
             ],
             "stopAtEntry": false,
             "cwd": "${workspaceRoot}/lab2",
