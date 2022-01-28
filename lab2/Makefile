@@ -6,13 +6,13 @@ INPUT ?= $(wildcard inputs/*/*.x)
 all: sim
 
 sim: $(SRC)
-	gcc -g -O2 $^ -o $@
+	gcc -pg -Og $^ -o $@
 
 basesim: $(SRC)
 	gcc -g -O2 $^ -o $@
 
 run: sim
-	@./run $(INPUT)
+	@python run.py $(INPUT)
 
 clean:
 	rm -rf *.o *~ sim
