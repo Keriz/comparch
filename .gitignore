@@ -3,6 +3,7 @@ lab1/basesim.exe
 lab1/sim.exe
 lab1/inputs/benchmarking/bm2/*
 lab1/inputs/benchmarking/bm1/*
+lab1/inputs/benchmarking/bm3/*
 lab1/sim
 lab1/task_2/associativity.png
 lab1/task_2/blocksize.png
