@@ -12,7 +12,7 @@ basesim: $(SRC)
 	gcc -g -O2 $^ -o $@
 
 run: sim
-	@./run $(INPUT)
+	@python run.py $(INPUT)
 
 clean:
 	rm -rf *.o *~ sim

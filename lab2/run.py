@@ -12,8 +12,8 @@ import re
 import glob
 import argparse
 
-ref = "basesim.exe"
-sim = "sim.exe"
+ref = "./basesim"
+sim = "./sim"
 
 bold = "\033[1m"
 green = "\033[0;32m"
