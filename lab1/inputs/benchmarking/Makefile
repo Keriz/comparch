@@ -5,7 +5,7 @@ INPUT_BM1 ?= $(wildcard bm1/*.s)
 INPUT_BM2 ?= $(wildcard bm2/*.s)
 INPUT_BM3 ?= $(wildcard bm3/*.s)
 INPUT_BM4 ?= $(wildcard bm4/*.s)
-INPUT_BM4 ?= $(wildcard bm5/*.s)
+INPUT_BM5 ?= $(wildcard bm5/*.s)
 INPUT_BM6 ?= $(wildcard bm6/*.s)
 
 tests:
