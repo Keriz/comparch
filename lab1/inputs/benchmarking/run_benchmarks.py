@@ -94,9 +94,9 @@ def block_size(bm1_inputs, bm2_inputs, bm3_inputs):
     width = 0.20  # the width of the bars
 
     fig, ax = plt.subplots()
-    rects1 = ax.bar(x - 1.5*width, averages_b1, width, label='Benchmark 1')
+    rects1 = ax.bar(x - width, averages_b1, width, label='Benchmark 1')
     rects2 = ax.bar(x, averages_b2, width, label='Benchmark 2')
-    rects3 = ax.bar(x + 1.5*width, averages_b3, width, label='Benchmark 3')
+    rects3 = ax.bar(x + width, averages_b3, width, label='Benchmark 3')
 
     # Add some text for labels, title and custom x-axis tick labels, etc.
     ax.set_ylabel('Average IPC (over 100 benchmark programs)')
@@ -106,9 +106,9 @@ def block_size(bm1_inputs, bm2_inputs, bm3_inputs):
     ax.set_xticklabels(labels)
     ax.legend()
 
-    ax.bar_label(rects1, padding=3)
-    ax.bar_label(rects2, padding=3)
-    ax.bar_label(rects3, padding=3)
+    ax.bar_label(rects1, padding=3, rotation='vertical')
+    ax.bar_label(rects2, padding=3, rotation='vertical')
+    ax.bar_label(rects3, padding=3, rotation='vertical')
 
     fig.tight_layout()
 
@@ -187,9 +187,9 @@ def cache_size(bm1_inputs, bm2_inputs, bm3_inputs):
     width = 0.20  # the width of the bars
 
     fig, ax = plt.subplots()
-    rects1 = ax.bar(x - 1.5*width, averages_b1, width, label='Benchmark 1')
+    rects1 = ax.bar(x - width, averages_b1, width, label='Benchmark 1')
     rects2 = ax.bar(x, averages_b2, width, label='Benchmark 2')
-    rects3 = ax.bar(x + 1.5*width, averages_b3, width, label='Benchmark 3')
+    rects3 = ax.bar(x + width, averages_b3, width, label='Benchmark 3')
 
     # Add some text for labels, title and custom x-axis tick labels, etc.
     ax.set_ylabel('Average IPC (over 100 benchmark programs)')
@@ -199,9 +199,9 @@ def cache_size(bm1_inputs, bm2_inputs, bm3_inputs):
     ax.set_xticklabels(labels)
     ax.legend()
 
-    ax.bar_label(rects1, padding=3)
-    ax.bar_label(rects2, padding=3)
-    ax.bar_label(rects3, padding=3)
+    ax.bar_label(rects1, padding=3, rotation='vertical')
+    ax.bar_label(rects2, padding=3, rotation='vertical')
+    ax.bar_label(rects3, padding=3, rotation='vertical')
 
     fig.tight_layout()
 
@@ -281,9 +281,10 @@ def associativity(bm1_inputs, bm2_inputs, bm3_inputs):
     width = 0.20  # the width of the bars
 
     fig, ax = plt.subplots()
-    rects1 = ax.bar(x - 1.5*width, averages_b1, width, label='Benchmark 1')
+    ax.set(ylim=(0, 0.6))
+    rects1 = ax.bar(x - width, averages_b1, width, label='Benchmark 1')
     rects2 = ax.bar(x, averages_b2, width, label='Benchmark 2')
-    rects3 = ax.bar(x + 1.5*width, averages_b3, width, label='Benchmark 3')
+    rects3 = ax.bar(x + width, averages_b3, width, label='Benchmark 3')
 
     # Add some text for labels, title and custom x-axis tick labels, etc.
     ax.set_ylabel('Average IPC (over 100 benchmark programs)')
@@ -293,9 +294,9 @@ def associativity(bm1_inputs, bm2_inputs, bm3_inputs):
     ax.set_xticklabels(labels)
     ax.legend()
 
-    ax.bar_label(rects1, padding=3)
-    ax.bar_label(rects2, padding=3)
-    ax.bar_label(rects3, padding=3)
+    ax.bar_label(rects1, padding=3, rotation='vertical')
+    ax.bar_label(rects2, padding=3, rotation='vertical')
+    ax.bar_label(rects3, padding=3, rotation='vertical')
 
     fig.tight_layout()
 
@@ -307,9 +308,9 @@ def main():
     bm2_inputs = glob.glob("bm2/*.x")
     bm3_inputs = glob.glob("bm3/*.x")
 
-    block_size(bm1_inputs, bm2_inputs, bm3_inputs)
+    #block_size(bm1_inputs, bm2_inputs, bm3_inputs)
     #cache_size(bm1_inputs, bm2_inputs, bm3_inputs)
-    #associativity(bm1_inputs, bm2_inputs, bm3_inputs)
+    associativity(bm1_inputs, bm2_inputs, bm3_inputs)
 
 
 def run(arg, i):
