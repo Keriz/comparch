@@ -79,15 +79,13 @@ __Possible usages are:__
 
 ## Cache exploration by sweeping parameters
 
-I was interested in optimizing the data cache regardless of the instruction cache. The instruction cache optimization can also be done by writing specific benchmarks.
+I was interested in optimizing the data cache regardless of the instruction cache and then the other way around.
 
-For instance, an instruction cache benchmark could be a program with multiple pointless functions containing a random number of `nop` instructions, and then randomly pointing out to other functions, until the end. This would force the instructions cache to flush and reload. We could also write a more sequential program with better space locality for the cache, which could be our second benchmark type.
-
-Similarly for the data cache, we are going to write two benchmarks.
+There's a streaming pattern benchmark and a random access one for both caches. For the data cache, Benchmark 3 and 4 are dedicated to testing cache eviction policies. 
 
 For each of those benchmarks, I generate 100 of them so that the benchmarking is less impacted by our program but rather gives an IPC that would be closer to reality.
 
-For each parameter that I am testing, I ran both benchmarks' 100 programs generated and reported the average IPC in a bar chart. This will help in determining the sweet point of the curve.
+For each parameter that I am testing (block size, associativity, cache size), I ran both benchmarks' 100 programs generated and reported the average IPC in a bar chart. This will help in determining the sweet point of the curve.
 
 __In retrospective, it probably would have lead to more interesting results to add more diversified benchmarks (more than two types), but designing tests is very time-consuming and I will leave it for later (or another lab).__
 
@@ -142,24 +140,154 @@ The number of access is in the range of `[10;2000]`. Examples programs are longe
 
 Generation details can be found in `inputs/benchmarking/generate_benchmarks.py`.
 
+### Benchmark program 3&4
+
+The third benchmark generates 100 consecutive random sequences of 8 accesses to the same set with different tags. A sequence could be `0, 1, 2, 3, 4, 3, 4, 2`. I designed this test for a 4-way cache to specifically test out the effect of eviction policy. Benchmark 4 is a variant where the probability of hitting multiple times the same address is 1.5 higher. There are also 500 sequences instead of 100.
+
+```asm
+.text
+    lui $s0, 0x1000
+    lui $s1, 0x3
+    addu $s2, $s1, $s0
+    lw $t0, 0($s2)
+    lui $s1, 0x5
+    addu $s2, $s1, $s0
+    lw $t0, 0($s2)
+    lui $s1, 0x2
+    addu $s2, $s1, $s0
+    lw $t0, 0($s2)
+    lui $s1, 0x1
+    addu $s2, $s1, $s0
+    .....
+    addiu $v0, $0, 10
+    syscall
+```
+
+Generation details can be found in `inputs/benchmarking/generate_benchmarks.py`.
+
+### Benchmark program 5
+
+This benchmark is for programs that call chained functions. In the benchmark, there are 10 functions generated, which each have different sizes (between 20 and 400 instructions `nop`). Each function calls the next function in a random order.
+
+```asm
+.text
+fn_0:
+    nop
+    nop
+    nop
+    nop
+    nop
+    ...
+    nop
+    beqz $0, fn_4
+fn_1:
+    nop
+    nop
+    .....
+    addiu $v0, $0, 10
+    syscall
+```
+
+Generation details can be found in `inputs/benchmarking/generate_benchmarks.py`.
+
+### Benchmark program 6
+
+BM6 is intended to simulate programs that regularly call the same functions. It generates 4 functions of random sizes (filled with 'nop'), and calls each of those in a random order multiple times, until we reach the end after a empirical amount of calls (defined at generation). In between the functions there are `nop` instructions to space out the functions locality and not rely too much on block size.
+
+Below is an extract of a generated program.
+
+```asm
+.text
+    addiu $t0, $0, 100
+    addiu $t1, $0, 1
+    addiu $t2, $0, 2
+    addiu $t3, $0, 3
+fn_main:
+    and $t4, $t0, $t3
+    nop
+    nop
+    blez $t0, end
+    nop
+    nop
+    beq $t4, $0, fn_0
+    nop
+    nop
+    beq $t4, $t1, fn_1
+    nop
+    nop
+    beq $t4, $t2, fn_2
+    nop
+    nop
+    beq $t4, $t3, fn_3
+end:
+    addiu $v0, $0, 10
+    syscall
+    nop
+    nop
+    .....
+    addiu $v0, $0, 10
+    syscall
+```
+
+Generation details can be found in `inputs/benchmarking/generate_benchmarks.py`.
+
+
+## Instruction cache exploration
+
+### Block size
+<p align="center">
+<img src="ic_blocksize.png" width="500" />
+</p>
+
+The other parameters were: 8-ways, 8KB Cache size.
+
+For both BM5 and BM6, the bigger the block size the higher is the average IPC. For Benchmark 6 it seems to reach a threshold because the functions are fart apart from each other in the cache, so after 256 the improvement starts to be less noticeable. Benchmark 5 benefits much more from the block size as the program is shorter.
+
+An acceptable compromise would be **64 B or 128 B** for the block size, otherwise it just becomes too large to be actually implementable and is not reasonable.
+
+
+### Cache size
+<p align="center">
+<img src="ic_cachesize.png" width="500" />
+</p>
+
+For a fixed 8-ways configuration, and 32B of block size, the cache size has most importance for BM6 as it is a shorter program. BM5 reaches further so the changing cache size alone doesn't help too much. 
+
+The results shown here could probably be more relevant is the pattern access was different (with more written tests), and it would be easier to draw a conclusion from the plot.
+
+For now, I would pick a cache of __8KB__.
+
+### Associativity
+<p align="center">
+<img src="ic_associativity.png" width="500" />
+</p>
+
+If we increment the associativity (more tags can be stored per set), the performance improvement stalls after 2 ways for BM5 and BM6. As programs are usually not likely to jump away very far (ie.PC0), I would suggest to keep a low associativity of 4 otherwise for some other benchmarks it could hurt the performances.
+
+Only one 1-way would be equivalent to a direct-mapped cache,  and too many ways would require additional logic (more area-consuming logic on the die as well as more combinational logic). I would stick to a  __4-ways associative cache__, .
+
+## Data cache exploration
+
 ### Block size
 
 Example of execution in the terminal:
-
-![Benchmark terminal](example_benchmark.png)
-![Block size ](blocksize.png)
+<p align="center">
+<img src="example_benchmark.png" width="500" />
+<img src="dc_blocksize.png" width="500" />
+</p>
 
 The other parameters were: 8-ways, 64KB Cache size.
 
-The bigger the block size, the better the access performance for the sequential program (BM1), which is to be expected. Regarding BM2, which has a random access pattern, it is notable that after a certain block size it doesn't help much because the addresses are too far apart anyways.
+The bigger the block size, the better the access performance for the sequential program (BM1), which is to be expected. Regarding BM2, which has a random access pattern, it is notable that after a certain block size it doesn't help much because the addresses are too far apart anyways. Same reasoning for BM3.
 
 An acceptable compromise would be **64 B or 128 B** for the block size, otherwise it just becomes too large to be actually implementable and is not reasonable.
 
 ### Cache size
 
-![Cache size ](cachesize.png)
-
-For a fixed 8-ways configuration, and 32B of block size, there is no improvement for a stream access to the array if the cache size increases. For the random access in BM2 it does help to a certain level, but shows no difference after 32KB.
+<p align="center">
+<img src="dc_cachesize.png" width="500" />
+</p>
+For a fixed 8-ways configuration, and 32B of block size, there is no improvement for a streaming pattern if the cache size increases and neither for BM2 nor BM3. The hits or miss don't depend on the cache size (unless oversized) in this case, but more on the block size.  
 
 The results shown here could probably be more relevant is the pattern access was different (with more written tests), and it would be easier to draw a conclusion from the plot.
 
@@ -167,11 +295,17 @@ For now, I would pick a cache of __64KB__.
 
 ### Number of sets (associativity)
 
-![Associativity ](associativity.png)
+<p align="center">
+<img src="dc_associativity.png" width="500" />
+</p>
 
 If we increment the associativity (more tags can be stored per set), the performance improvement stalls after 2 ways for BM2 and BM1. This is normal since for BM1 it uses two ways at most and the block size is the only parameter 
 
-The streaming pattern BM1 sees a performance improvement stall after 2 ways. This is because it loads in each set needs to be stored consecutively the load and store addresses. One way is clearly not enough as it needs to reload the block after each load or store. After 2 ways, not much can be done except than having a larger block size to improve performance as it will anyway need to reach the next set. BM2 analysis is exactly the same as for BM1.
+The streaming pattern BM1 sees a performance improvement stall after 2 ways. This is because it loads in each set needs to be stored consecutively the load and store addresses. One way is clearly not enough as it needs to reload the block after each load or store. After 2 ways, not much can be done except than having a larger block size to improve performance as it will anyway need to reach the next set.
+
+Concerning BM2, the accesses are random so the number of ways has no importance on the average IPC.
+
+However, for BM3 (which is designed for a 4-way cache policy testing) we can see that the performance increase until we reach 8 ways. This is expected as with 8 ways it stores all the accessed addresses in the cache and never has to load them.
 
 Only one 1-way would be equivalent to a direct-mapped cache,  and too many ways would require additional logic (more area-consuming logic on the die as well as more combinational logic). I would stick to a number between __between 4 and 16__, depending on the cache level.
 
@@ -180,17 +314,33 @@ Only one 1-way would be equivalent to a direct-mapped cache,  and too many ways 
 The following policies have been tested:
 
 - Least-Recently Used (LRU)
-- Random Replacement
+- Random Replacement (RR)
 - Most-recently Used (MRU)
 - FIFO
 
-For each of them I ran a simulation on some benchmarks provided, a few of , to see if it affected any of the workloads. The baseline was LRU. The graph below shows the average cycles speedup for each program. 
+For each of them I ran a simulation on some benchmarks provided as well as a few tests generated by BM2, BM3 and BM4. There are two configurations of data cache and an instruction cache of The graph below shows the average cycles speedup for each program against the baseline LRU. 
 
-My conclusion is that LRU is the best amongst the one tested.
+It hard to attain a conclusion from the plots as we see no difference with LRU for most of the simulations (accesses being mostly random and never targeting more than once the same cache block). 
 
-Setup  1 (Cache size 64kB, 32B block size, 4-ways associative)
+It is important to note that MRU reaches the best speedup (37.1%) in the case of BM4 in both setup 1 and 2, due to the pattern access which reaccesses older elements sparsely enough to gain benefit from MRU. As BM3 is a variation of BM4 which focused towards the testing of cache policy, so it is normal that the speedup is slightly less for BM3 than for BM4.
 
-![Associativity ](associativity.png)
-Setup  2 (Cache size 16kB, 4B block size, 4-ways associative) 
+For future work, testing more programs would probably lead to different conclusion for the cache policies (ie. instruction cache focused), so I decided to leave out LRU in my most performing design.
+
+
+##### Setup 2 
+- **Data cache** *cache size 64kB, 32B block size, 4-ways associative*
+- **Instruction cache** *cache size 8kB, 32B blocks, 4-ways* associative 
+
+<p align="center">
+<img src="setup1.png" width="600" />
+</p>
+
+##### Setup 2 
+- **Data cache** *cache size 16kB, 4B block size, 4-ways associative*
+- **Instruction cache** *cache size 8kB, 32B blocks, 4-ways* associative 
+
+<p align="center">
+<img src="setup2.png" width="600" />
+</p>
 
 </div>

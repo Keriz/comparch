@@ -1,0 +1,526 @@
+<!DOCTYPE html><html><head>
+      <title>report_gthi</title>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      
+      <link rel="stylesheet" href="file:///c:\Users\guill\.vscode\extensions\shd101wyy.markdown-preview-enhanced-0.6.1\node_modules\@shd101wyy\mume\dependencies\katex\katex.min.css">
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      <style>
+      /**
+ * prism.js Github theme based on GitHub's theme.
+ * @author Sam Clarke
+ */
+code[class*="language-"],
+pre[class*="language-"] {
+  color: #333;
+  background: none;
+  font-family: Consolas, "Liberation Mono", Menlo, Courier, monospace;
+  text-align: left;
+  white-space: pre;
+  word-spacing: normal;
+  word-break: normal;
+  word-wrap: normal;
+  line-height: 1.4;
+
+  -moz-tab-size: 8;
+  -o-tab-size: 8;
+  tab-size: 8;
+
+  -webkit-hyphens: none;
+  -moz-hyphens: none;
+  -ms-hyphens: none;
+  hyphens: none;
+}
+
+/* Code blocks */
+pre[class*="language-"] {
+  padding: .8em;
+  overflow: auto;
+  /* border: 1px solid #ddd; */
+  border-radius: 3px;
+  /* background: #fff; */
+  background: #f5f5f5;
+}
+
+/* Inline code */
+:not(pre) > code[class*="language-"] {
+  padding: .1em;
+  border-radius: .3em;
+  white-space: normal;
+  background: #f5f5f5;
+}
+
+.token.comment,
+.token.blockquote {
+  color: #969896;
+}
+
+.token.cdata {
+  color: #183691;
+}
+
+.token.doctype,
+.token.punctuation,
+.token.variable,
+.token.macro.property {
+  color: #333;
+}
+
+.token.operator,
+.token.important,
+.token.keyword,
+.token.rule,
+.token.builtin {
+  color: #a71d5d;
+}
+
+.token.string,
+.token.url,
+.token.regex,
+.token.attr-value {
+  color: #183691;
+}
+
+.token.property,
+.token.number,
+.token.boolean,
+.token.entity,
+.token.atrule,
+.token.constant,
+.token.symbol,
+.token.command,
+.token.code {
+  color: #0086b3;
+}
+
+.token.tag,
+.token.selector,
+.token.prolog {
+  color: #63a35c;
+}
+
+.token.function,
+.token.namespace,
+.token.pseudo-element,
+.token.class,
+.token.class-name,
+.token.pseudo-class,
+.token.id,
+.token.url-reference .token.variable,
+.token.attr-name {
+  color: #795da3;
+}
+
+.token.entity {
+  cursor: help;
+}
+
+.token.title,
+.token.title .token.punctuation {
+  font-weight: bold;
+  color: #1d3e81;
+}
+
+.token.list {
+  color: #ed6a43;
+}
+
+.token.inserted {
+  background-color: #eaffea;
+  color: #55a532;
+}
+
+.token.deleted {
+  background-color: #ffecec;
+  color: #bd2c00;
+}
+
+.token.bold {
+  font-weight: bold;
+}
+
+.token.italic {
+  font-style: italic;
+}
+
+
+/* JSON */
+.language-json .token.property {
+  color: #183691;
+}
+
+.language-markup .token.tag .token.punctuation {
+  color: #333;
+}
+
+/* CSS */
+code.language-css,
+.language-css .token.function {
+  color: #0086b3;
+}
+
+/* YAML */
+.language-yaml .token.atrule {
+  color: #63a35c;
+}
+
+code.language-yaml {
+  color: #183691;
+}
+
+/* Ruby */
+.language-ruby .token.function {
+  color: #333;
+}
+
+/* Markdown */
+.language-markdown .token.url {
+  color: #795da3;
+}
+
+/* Makefile */
+.language-makefile .token.symbol {
+  color: #795da3;
+}
+
+.language-makefile .token.variable {
+  color: #183691;
+}
+
+.language-makefile .token.builtin {
+  color: #0086b3;
+}
+
+/* Bash */
+.language-bash .token.keyword {
+  color: #0086b3;
+}
+
+/* highlight */
+pre[data-line] {
+  position: relative;
+  padding: 1em 0 1em 3em;
+}
+pre[data-line] .line-highlight-wrapper {
+  position: absolute;
+  top: 0;
+  left: 0;
+  background-color: transparent;
+  display: block;
+  width: 100%;
+}
+
+pre[data-line] .line-highlight {
+  position: absolute;
+  left: 0;
+  right: 0;
+  padding: inherit 0;
+  margin-top: 1em;
+  background: hsla(24, 20%, 50%,.08);
+  background: linear-gradient(to right, hsla(24, 20%, 50%,.1) 70%, hsla(24, 20%, 50%,0));
+  pointer-events: none;
+  line-height: inherit;
+  white-space: pre;
+}
+
+pre[data-line] .line-highlight:before, 
+pre[data-line] .line-highlight[data-end]:after {
+  content: attr(data-start);
+  position: absolute;
+  top: .4em;
+  left: .6em;
+  min-width: 1em;
+  padding: 0 .5em;
+  background-color: hsla(24, 20%, 50%,.4);
+  color: hsl(24, 20%, 95%);
+  font: bold 65%/1.5 sans-serif;
+  text-align: center;
+  vertical-align: .3em;
+  border-radius: 999px;
+  text-shadow: none;
+  box-shadow: 0 1px white;
+}
+
+pre[data-line] .line-highlight[data-end]:after {
+  content: attr(data-end);
+  top: auto;
+  bottom: .4em;
+}html body{font-family:"Helvetica Neue",Helvetica,"Segoe UI",Arial,freesans,sans-serif;font-size:16px;line-height:1.6;color:#333;background-color:#fff;overflow:initial;box-sizing:border-box;word-wrap:break-word}html body>:first-child{margin-top:0}html body h1,html body h2,html body h3,html body h4,html body h5,html body h6{line-height:1.2;margin-top:1em;margin-bottom:16px;color:#000}html body h1{font-size:2.25em;font-weight:300;padding-bottom:.3em}html body h2{font-size:1.75em;font-weight:400;padding-bottom:.3em}html body h3{font-size:1.5em;font-weight:500}html body h4{font-size:1.25em;font-weight:600}html body h5{font-size:1.1em;font-weight:600}html body h6{font-size:1em;font-weight:600}html body h1,html body h2,html body h3,html body h4,html body h5{font-weight:600}html body h5{font-size:1em}html body h6{color:#5c5c5c}html body strong{color:#000}html body del{color:#5c5c5c}html body a:not([href]){color:inherit;text-decoration:none}html body a{color:#08c;text-decoration:none}html body a:hover{color:#00a3f5;text-decoration:none}html body img{max-width:100%}html body>p{margin-top:0;margin-bottom:16px;word-wrap:break-word}html body>ul,html body>ol{margin-bottom:16px}html body ul,html body ol{padding-left:2em}html body ul.no-list,html body ol.no-list{padding:0;list-style-type:none}html body ul ul,html body ul ol,html body ol ol,html body ol ul{margin-top:0;margin-bottom:0}html body li{margin-bottom:0}html body li.task-list-item{list-style:none}html body li>p{margin-top:0;margin-bottom:0}html body .task-list-item-checkbox{margin:0 .2em .25em -1.8em;vertical-align:middle}html body .task-list-item-checkbox:hover{cursor:pointer}html body blockquote{margin:16px 0;font-size:inherit;padding:0 15px;color:#5c5c5c;background-color:#f0f0f0;border-left:4px solid #d6d6d6}html body blockquote>:first-child{margin-top:0}html body blockquote>:last-child{margin-bottom:0}html body hr{height:4px;margin:32px 0;background-color:#d6d6d6;border:0 none}html body table{margin:10px 0 15px 0;border-collapse:collapse;border-spacing:0;display:block;width:100%;overflow:auto;word-break:normal;word-break:keep-all}html body table th{font-weight:bold;color:#000}html body table td,html body table th{border:1px solid #d6d6d6;padding:6px 13px}html body dl{padding:0}html body dl dt{padding:0;margin-top:16px;font-size:1em;font-style:italic;font-weight:bold}html body dl dd{padding:0 16px;margin-bottom:16px}html body code{font-family:Menlo,Monaco,Consolas,'Courier New',monospace;font-size:.85em !important;color:#000;background-color:#f0f0f0;border-radius:3px;padding:.2em 0}html body code::before,html body code::after{letter-spacing:-0.2em;content:"\00a0"}html body pre>code{padding:0;margin:0;font-size:.85em !important;word-break:normal;white-space:pre;background:transparent;border:0}html body .highlight{margin-bottom:16px}html body .highlight pre,html body pre{padding:1em;overflow:auto;font-size:.85em !important;line-height:1.45;border:#d6d6d6;border-radius:3px}html body .highlight pre{margin-bottom:0;word-break:normal}html body pre code,html body pre tt{display:inline;max-width:initial;padding:0;margin:0;overflow:initial;line-height:inherit;word-wrap:normal;background-color:transparent;border:0}html body pre code:before,html body pre tt:before,html body pre code:after,html body pre tt:after{content:normal}html body p,html body blockquote,html body ul,html body ol,html body dl,html body pre{margin-top:0;margin-bottom:16px}html body kbd{color:#000;border:1px solid #d6d6d6;border-bottom:2px solid #c7c7c7;padding:2px 4px;background-color:#f0f0f0;border-radius:3px}@media print{html body{background-color:#fff}html body h1,html body h2,html body h3,html body h4,html body h5,html body h6{color:#000;page-break-after:avoid}html body blockquote{color:#5c5c5c}html body pre{page-break-inside:avoid}html body table{display:table}html body img{display:block;max-width:100%;max-height:100%}html body pre,html body code{word-wrap:break-word;white-space:pre}}.markdown-preview{width:100%;height:100%;box-sizing:border-box}.markdown-preview .pagebreak,.markdown-preview .newpage{page-break-before:always}.markdown-preview pre.line-numbers{position:relative;padding-left:3.8em;counter-reset:linenumber}.markdown-preview pre.line-numbers>code{position:relative}.markdown-preview pre.line-numbers .line-numbers-rows{position:absolute;pointer-events:none;top:1em;font-size:100%;left:0;width:3em;letter-spacing:-1px;border-right:1px solid #999;-webkit-user-select:none;-moz-user-select:none;-ms-user-select:none;user-select:none}.markdown-preview pre.line-numbers .line-numbers-rows>span{pointer-events:none;display:block;counter-increment:linenumber}.markdown-preview pre.line-numbers .line-numbers-rows>span:before{content:counter(linenumber);color:#999;display:block;padding-right:.8em;text-align:right}.markdown-preview .mathjax-exps .MathJax_Display{text-align:center !important}.markdown-preview:not([for="preview"]) .code-chunk .btn-group{display:none}.markdown-preview:not([for="preview"]) .code-chunk .status{display:none}.markdown-preview:not([for="preview"]) .code-chunk .output-div{margin-bottom:16px}.scrollbar-style::-webkit-scrollbar{width:8px}.scrollbar-style::-webkit-scrollbar-track{border-radius:10px;background-color:transparent}.scrollbar-style::-webkit-scrollbar-thumb{border-radius:5px;background-color:rgba(150,150,150,0.66);border:4px solid rgba(150,150,150,0.66);background-clip:content-box}html body[for="html-export"]:not([data-presentation-mode]){position:relative;width:100%;height:100%;top:0;left:0;margin:0;padding:0;overflow:auto}html body[for="html-export"]:not([data-presentation-mode]) .markdown-preview{position:relative;top:0}@media screen and (min-width:914px){html body[for="html-export"]:not([data-presentation-mode]) .markdown-preview{padding:2em calc(50% - 457px + 2em)}}@media screen and (max-width:914px){html body[for="html-export"]:not([data-presentation-mode]) .markdown-preview{padding:2em}}@media screen and (max-width:450px){html body[for="html-export"]:not([data-presentation-mode]) .markdown-preview{font-size:14px !important;padding:1em}}@media print{html body[for="html-export"]:not([data-presentation-mode]) #sidebar-toc-btn{display:none}}html body[for="html-export"]:not([data-presentation-mode]) #sidebar-toc-btn{position:fixed;bottom:8px;left:8px;font-size:28px;cursor:pointer;color:inherit;z-index:99;width:32px;text-align:center;opacity:.4}html body[for="html-export"]:not([data-presentation-mode])[html-show-sidebar-toc] #sidebar-toc-btn{opacity:1}html body[for="html-export"]:not([data-presentation-mode])[html-show-sidebar-toc] .md-sidebar-toc{position:fixed;top:0;left:0;width:300px;height:100%;padding:32px 0 48px 0;font-size:14px;box-shadow:0 0 4px rgba(150,150,150,0.33);box-sizing:border-box;overflow:auto;background-color:inherit}html body[for="html-export"]:not([data-presentation-mode])[html-show-sidebar-toc] .md-sidebar-toc::-webkit-scrollbar{width:8px}html body[for="html-export"]:not([data-presentation-mode])[html-show-sidebar-toc] .md-sidebar-toc::-webkit-scrollbar-track{border-radius:10px;background-color:transparent}html body[for="html-export"]:not([data-presentation-mode])[html-show-sidebar-toc] .md-sidebar-toc::-webkit-scrollbar-thumb{border-radius:5px;background-color:rgba(150,150,150,0.66);border:4px solid rgba(150,150,150,0.66);background-clip:content-box}html body[for="html-export"]:not([data-presentation-mode])[html-show-sidebar-toc] .md-sidebar-toc a{text-decoration:none}html body[for="html-export"]:not([data-presentation-mode])[html-show-sidebar-toc] .md-sidebar-toc ul{padding:0 1.6em;margin-top:.8em}html body[for="html-export"]:not([data-presentation-mode])[html-show-sidebar-toc] .md-sidebar-toc li{margin-bottom:.8em}html body[for="html-export"]:not([data-presentation-mode])[html-show-sidebar-toc] .md-sidebar-toc ul{list-style-type:none}html body[for="html-export"]:not([data-presentation-mode])[html-show-sidebar-toc] .markdown-preview{left:300px;width:calc(100% -  300px);padding:2em calc(50% - 457px -  150px);margin:0;box-sizing:border-box}@media screen and (max-width:1274px){html body[for="html-export"]:not([data-presentation-mode])[html-show-sidebar-toc] .markdown-preview{padding:2em}}@media screen and (max-width:450px){html body[for="html-export"]:not([data-presentation-mode])[html-show-sidebar-toc] .markdown-preview{width:100%}}html body[for="html-export"]:not([data-presentation-mode]):not([html-show-sidebar-toc]) .markdown-preview{left:50%;transform:translateX(-50%)}html body[for="html-export"]:not([data-presentation-mode]):not([html-show-sidebar-toc]) .md-sidebar-toc{display:none}
+/* Please visit the URL below for more information: */
+/*   https://shd101wyy.github.io/markdown-preview-enhanced/#/customize-css */
+
+      </style>
+    </head>
+    <body for="html-export">
+      <div class="mume markdown-preview  ">
+      <h1 class="mume-header" id="report-guillaume-thivolet-guillaumeglabsch">Report Guillaume Thivolet - <a href="mailto:guillaume@glabs.ch">guillaume@glabs.ch</a></h1>
+
+<div style="text-align: justify">
+<h2>Experiment setup, benchmark generation</h2>
+<p>I automated the benchmarking using python. Below is an explanation of all actions that are required to reproduce my work.</p>
+<p>The <code>run_benchmarks.py</code> script has to be modified in order to change which parameter we are currently sweeping. Only the function being swept should be uncommented in the main function.</p>
+<p>As the run_benchmarks.py program passes the argument being tested to the program, the c files also require some changes in order to accept this additional parameter.</p>
+<p>There are listed just below. In <code>pipe.c</code>, the passed parameter from the console line argument should be used correctly in the cache initialization in relation to the parameter that we are testing.</p>
+<p><code>pipe.c, pipe_init()</code></p>
+<pre data-role="codeBlock" data-info="c" class="language-c"><span class="token keyword keyword-void">void</span> <span class="token function">pipe_init</span><span class="token punctuation">(</span><span class="token keyword keyword-int">int</span> param<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+	<span class="token function">memset</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>pipe<span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">,</span> <span class="token keyword keyword-sizeof">sizeof</span><span class="token punctuation">(</span>Pipe_State<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+	pipe<span class="token punctuation">.</span>PC <span class="token operator">=</span> <span class="token number">0x00400000</span><span class="token punctuation">;</span>
+
+	instruction_cache <span class="token operator">=</span> <span class="token function">cache_init</span><span class="token punctuation">(</span><span class="token number">1</span> <span class="token operator">&lt;&lt;</span> <span class="token number">13</span><span class="token punctuation">,</span> <span class="token number">32</span><span class="token punctuation">,</span> <span class="token number">4</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+	data_cache        <span class="token operator">=</span> <span class="token function">cache_init</span><span class="token punctuation">(</span><span class="token number">1</span> <span class="token operator">&lt;&lt;</span> <span class="token number">16</span><span class="token punctuation">,</span> param<span class="token punctuation">,</span> <span class="token number">8</span><span class="token punctuation">)</span><span class="token punctuation">;</span> testing block size
+	<span class="token comment">//data_cache        = cache_init(1 &lt;&lt; 16, 32, param); testing associativity</span>
+	<span class="token comment">//data_cache        = cache_init(1 &lt;&lt; (10 + 31 - __builtin_clzl((uint32_t)param)), 32, 8); testing cache size</span>
+<span class="token punctuation">}</span>
+</pre><p><code>shell.c, main</code></p>
+<pre data-role="codeBlock" data-info="c" class="language-c"><span class="token keyword keyword-int">int</span> <span class="token function">main</span><span class="token punctuation">(</span><span class="token keyword keyword-int">int</span> argc<span class="token punctuation">,</span> <span class="token keyword keyword-char">char</span> <span class="token operator">*</span>argv<span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+
+	<span class="token comment">/* Error Checking */</span>
+	<span class="token keyword keyword-if">if</span> <span class="token punctuation">(</span>argc <span class="token operator">&lt;</span> <span class="token number">2</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+		<span class="token function">printf</span><span class="token punctuation">(</span><span class="token string">&quot;Error: usage: %s &lt;program_file_1&gt; &lt;program_file_2&gt; ...\n&quot;</span><span class="token punctuation">,</span>
+		       argv<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+		<span class="token function">exit</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+	<span class="token punctuation">}</span>
+
+	<span class="token function">printf</span><span class="token punctuation">(</span><span class="token string">&quot;MIPS Simulator\n\n&quot;</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+	<span class="token function">initialize</span><span class="token punctuation">(</span><span class="token function">strtol</span><span class="token punctuation">(</span>argv<span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">]</span><span class="token punctuation">,</span> <span class="token constant">NULL</span><span class="token punctuation">,</span> <span class="token number">10</span><span class="token punctuation">)</span><span class="token punctuation">,</span> argv<span class="token punctuation">[</span><span class="token number">2</span><span class="token punctuation">]</span><span class="token punctuation">,</span> argc <span class="token operator">-</span> <span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+	<span class="token keyword keyword-while">while</span> <span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">)</span>
+		<span class="token function">get_command</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+</pre><p><code>shell.c, initialize</code></p>
+<pre data-role="codeBlock" data-info="c" class="language-c"><span class="token keyword keyword-void">void</span> <span class="token function">initialize</span><span class="token punctuation">(</span><span class="token keyword keyword-int">int</span> param<span class="token punctuation">,</span> <span class="token keyword keyword-char">char</span> <span class="token operator">*</span>program_filename<span class="token punctuation">,</span> <span class="token keyword keyword-int">int</span> num_prog_files<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+	<span class="token keyword keyword-int">int</span> i<span class="token punctuation">;</span>
+
+	<span class="token function">init_memory</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+	<span class="token function">pipe_init</span><span class="token punctuation">(</span>param<span class="token punctuation">)</span><span class="token punctuation">;</span>
+	<span class="token keyword keyword-for">for</span> <span class="token punctuation">(</span>i <span class="token operator">=</span> <span class="token number">1</span><span class="token punctuation">;</span> i <span class="token operator">&lt;</span> num_prog_files<span class="token punctuation">;</span> i<span class="token operator">++</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+		<span class="token function">load_program</span><span class="token punctuation">(</span>program_filename<span class="token punctuation">)</span><span class="token punctuation">;</span>
+		<span class="token keyword keyword-while">while</span> <span class="token punctuation">(</span><span class="token operator">*</span>program_filename<span class="token operator">++</span> <span class="token operator">!=</span> <span class="token string">&apos;\0&apos;</span><span class="token punctuation">)</span>
+			<span class="token punctuation">;</span>
+	<span class="token punctuation">}</span>
+
+	RUN_BIT <span class="token operator">=</span> TRUE<span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+</pre><p>In <code>inputs/benchmarking/</code>, a Makefile is provided to generate the benchmarks object files and to subsequently run the automated tests on the simulator. The user must install the cross-compilation MIPS toolchain on his Linux first. I suggest to fetch it through the debian package manager:</p>
+<pre data-role="codeBlock" data-info="bash" class="language-bash"><span class="token function">sudo</span> <span class="token function">apt</span> <span class="token function">install</span> binutils-mips-linux-gnu
+</pre><p><strong>Possible usages are:</strong></p>
+<ul>
+<li><code>make</code> to generate both benchmarks</li>
+<li><code>make run_tests</code> to run the tests through the simulator</li>
+</ul>
+<h2>Cache exploration by sweeping parameters</h2>
+<p>I was interested in optimizing the data cache regardless of the instruction cache and then the other way around.</p>
+<p>There&apos;s a streaming pattern benchmark and a random access one for both caches. For the data cache, Benchmark 3 and 4 are dedicated to testing cache eviction policies.</p>
+<p>For each of those benchmarks, I generate 100 of them so that the benchmarking is less impacted by our program but rather gives an IPC that would be closer to reality.</p>
+<p>For each parameter that I am testing (block size, associativity, cache size), I ran both benchmarks&apos; 100 programs generated and reported the average IPC in a bar chart. This will help in determining the sweet point of the curve.</p>
+<p><strong>In retrospective, it probably would have lead to more interesting results to add more diversified benchmarks (more than two types), but designing tests is very time-consuming and I will leave it for later (or another lab).</strong></p>
+<h3>Benchmark program 1</h3>
+<p>The first program streams the memory sequentially with an increment of 4 bytes on the address pointer between each access, and copies the accessed value in another array further in the memory.<br>
+The variant is in regard to the number of copies that we do (initial <code>addiu $s2, $0, 0xXXX</code> value). Below is an example program.</p>
+<pre data-role="codeBlock" data-info="asm" class="language-asm"><code>.text
+    lui $s0, 0x1000
+    lui $s1, 0x2000
+    addiu $s2, $0, 0x4e9
+loop:
+    lw $t0, 0($s0)
+    sw $t0, 0($s1)
+    addiu $s0, $s0, 0x4
+    addiu $s1, $s1, 0x4
+    addiu $s2, $s2, -1
+    nop
+    nop
+    bnez $s2, loop
+    addiu $v0, $0, 10
+    syscall
+</code></pre><p>Generation details can be found in <code>inputs/benchmarking/generate_benchmarks.py</code>.</p>
+<h3>Benchmark program 2</h3>
+<p>The second program generate <code>n</code> random accesses in the memory and copies the accessed value in another array.<br>
+The number of access is in the range of <code>[10;2000]</code>. Examples programs are longer than for the benchmark 1 as all the access are hardcoded and there&apos;s no loop. Below is an extract of a generated program.</p>
+<pre data-role="codeBlock" data-info="asm" class="language-asm"><code>.text
+    lui $s0, 0x1000
+    lui $s1, 0x3000
+    addiu $s2, $s0, 0x3c
+    lw $t0, 0($s2)
+    addiu $s2, $s1, 0x80
+    sw $t0, 0($s2)
+    addiu $s2, $s0, 0xb8
+    lw $t0, 0($s2)
+    addiu $s2, $s1, 0x70
+    sw $t0, 0($s2)
+    addiu $s2, $s0, 0xe0
+    lw $t0, 0($s2)
+    .....
+    addiu $v0, $0, 10
+    syscall
+</code></pre><p>Generation details can be found in <code>inputs/benchmarking/generate_benchmarks.py</code>.</p>
+<h3>Benchmark program 3&amp;4</h3>
+<p>The third benchmark generates 100 consecutive random sequences of 8 accesses to the same set with different tags. A sequence could be <code>0, 1, 2, 3, 4, 3, 4, 2</code>. I designed this test for a 4-way cache to specifically test out the effect of eviction policy. Benchmark 4 is a variant where the probability of hitting multiple times the same address is 1.5 higher. There are also 500 sequences instead of 100.</p>
+<pre data-role="codeBlock" data-info="asm" class="language-asm"><code>.text
+    lui $s0, 0x1000
+    lui $s1, 0x3
+    addu $s2, $s1, $s0
+    lw $t0, 0($s2)
+    lui $s1, 0x5
+    addu $s2, $s1, $s0
+    lw $t0, 0($s2)
+    lui $s1, 0x2
+    addu $s2, $s1, $s0
+    lw $t0, 0($s2)
+    lui $s1, 0x1
+    addu $s2, $s1, $s0
+    .....
+    addiu $v0, $0, 10
+    syscall
+</code></pre><p>Generation details can be found in <code>inputs/benchmarking/generate_benchmarks.py</code>.</p>
+<h3>Benchmark program 5</h3>
+<p>This benchmark is for programs that call chained functions. In the benchmark, there are 10 functions generated, which each have different sizes (between 20 and 400 instructions <code>nop</code>). Each function calls the next function in a random order.</p>
+<pre data-role="codeBlock" data-info="asm" class="language-asm"><code>.text
+fn_0:
+    nop
+    nop
+    nop
+    nop
+    nop
+    ...
+    nop
+    beqz $0, fn_4
+fn_1:
+    nop
+    nop
+    .....
+    addiu $v0, $0, 10
+    syscall
+</code></pre><p>Generation details can be found in <code>inputs/benchmarking/generate_benchmarks.py</code>.</p>
+<h3>Benchmark program 6</h3>
+<p>BM6 is intended to simulate programs that regularly call the same functions. It generates 4 functions of random sizes (filled with &apos;nop&apos;), and calls each of those in a random order multiple times, until we reach the end after a empirical amount of calls (defined at generation). In between the functions there are <code>nop</code> instructions to space out the functions locality and not rely too much on block size.</p>
+<p>Below is an extract of a generated program.</p>
+<pre data-role="codeBlock" data-info="asm" class="language-asm"><code>.text
+    addiu $t0, $0, 100
+    addiu $t1, $0, 1
+    addiu $t2, $0, 2
+    addiu $t3, $0, 3
+fn_main:
+    and $t4, $t0, $t3
+    nop
+    nop
+    blez $t0, end
+    nop
+    nop
+    beq $t4, $0, fn_0
+    nop
+    nop
+    beq $t4, $t1, fn_1
+    nop
+    nop
+    beq $t4, $t2, fn_2
+    nop
+    nop
+    beq $t4, $t3, fn_3
+end:
+    addiu $v0, $0, 10
+    syscall
+    nop
+    nop
+    .....
+    addiu $v0, $0, 10
+    syscall
+</code></pre><p>Generation details can be found in <code>inputs/benchmarking/generate_benchmarks.py</code>.</p>
+<h2>Instruction cache exploration</h2>
+<h3>Block size</h3>
+<p align="center">
+<img src="ic_blocksize.png" width="500">
+</p>
+<p>The other parameters were: 8-ways, 8KB Cache size.</p>
+<p>For both BM5 and BM6, the bigger the block size the higher is the average IPC. For Benchmark 6 it seems to reach a threshold because the functions are fart apart from each other in the cache, so after 256 the improvement starts to be less noticeable. Benchmark 5 benefits much more from the block size as the program is shorter.</p>
+<p>An acceptable compromise would be <strong>64 B or 128 B</strong> for the block size, otherwise it just becomes too large to be actually implementable and is not reasonable.</p>
+<h3>Cache size</h3>
+<p align="center">
+<img src="ic_cachesize.png" width="500">
+</p>
+<p>For a fixed 8-ways configuration, and 32B of block size, the cache size has most importance for BM6 as it is a shorter program. BM5 reaches further so the changing cache size alone doesn&apos;t help too much.</p>
+<p>The results shown here could probably be more relevant is the pattern access was different (with more written tests), and it would be easier to draw a conclusion from the plot.</p>
+<p>For now, I would pick a cache of <strong>8KB</strong>.</p>
+<h3>Associativity</h3>
+<p align="center">
+<img src="ic_associativity.png" width="500">
+</p>
+<p>If we increment the associativity (more tags can be stored per set), the performance improvement stalls after 2 ways for BM5 and BM6. As programs are usually not likely to jump away very far (ie.PC0), I would suggest to keep a low associativity of 4 otherwise for some other benchmarks it could hurt the performances.</p>
+<p>Only one 1-way would be equivalent to a direct-mapped cache,  and too many ways would require additional logic (more area-consuming logic on the die as well as more combinational logic). I would stick to a  <strong>4-ways associative cache</strong>, .</p>
+<h2>Data cache exploration</h2>
+<h3>Block size</h3>
+<p>Example of execution in the terminal:</p>
+<p align="center">
+<img src="example_benchmark.png" width="500">
+<img src="dc_blocksize.png" width="500">
+</p>
+<p>The other parameters were: 8-ways, 64KB Cache size.</p>
+<p>The bigger the block size, the better the access performance for the sequential program (BM1), which is to be expected. Regarding BM2, which has a random access pattern, it is notable that after a certain block size it doesn&apos;t help much because the addresses are too far apart anyways. Same reasoning for BM3.</p>
+<p>An acceptable compromise would be <strong>64 B or 128 B</strong> for the block size, otherwise it just becomes too large to be actually implementable and is not reasonable.</p>
+<h3>Cache size</h3>
+<p align="center">
+<img src="dc_cachesize.png" width="500">
+</p>
+For a fixed 8-ways configuration, and 32B of block size, there is no improvement for a streaming pattern if the cache size increases and neither for BM2 nor BM3. The hits or miss don&apos;t depend on the cache size (unless oversized) in this case, but more on the block size.  
+<p>The results shown here could probably be more relevant is the pattern access was different (with more written tests), and it would be easier to draw a conclusion from the plot.</p>
+<p>For now, I would pick a cache of <strong>64KB</strong>.</p>
+<h3>Number of sets (associativity)</h3>
+<p align="center">
+<img src="dc_associativity.png" width="500">
+</p>
+<p>If we increment the associativity (more tags can be stored per set), the performance improvement stalls after 2 ways for BM2 and BM1. This is normal since for BM1 it uses two ways at most and the block size is the only parameter</p>
+<p>The streaming pattern BM1 sees a performance improvement stall after 2 ways. This is because it loads in each set needs to be stored consecutively the load and store addresses. One way is clearly not enough as it needs to reload the block after each load or store. After 2 ways, not much can be done except than having a larger block size to improve performance as it will anyway need to reach the next set.</p>
+<p>Concerning BM2, the accesses are random so the number of ways has no importance on the average IPC.</p>
+<p>However, for BM3 (which is designed for a 4-way cache policy testing) we can see that the performance increase until we reach 8 ways. This is expected as with 8 ways it stores all the accessed addresses in the cache and never has to load them.</p>
+<p>Only one 1-way would be equivalent to a direct-mapped cache,  and too many ways would require additional logic (more area-consuming logic on the die as well as more combinational logic). I would stick to a number between <strong>between 4 and 16</strong>, depending on the cache level.</p>
+<h2>Cache replacement policy exploration</h2>
+<p>The following policies have been tested:</p>
+<ul>
+<li>Least-Recently Used (LRU)</li>
+<li>Random Replacement (RR)</li>
+<li>Most-recently Used (MRU)</li>
+<li>FIFO</li>
+</ul>
+<p>For each of them I ran a simulation on some benchmarks provided as well as a few tests generated by BM2, BM3 and BM4. There are two configurations of data cache and an instruction cache of The graph below shows the average cycles speedup for each program against the baseline LRU.</p>
+<p>It hard to attain a conclusion from the plots as we see no difference with LRU for most of the simulations (accesses being mostly random and never targeting more than once the same cache block).</p>
+<p>It is important to note that MRU reaches the best speedup (37.1%) in the case of BM4 in both setup 1 and 2, due to the pattern access which reaccesses older elements sparsely enough to gain benefit from MRU. As BM3 is a variation of BM4 which focused towards the testing of cache policy, so it is normal that the speedup is slightly less for BM3 than for BM4.</p>
+<p>For future work, testing more programs would probably lead to different conclusion for the cache policies (ie. instruction cache focused), so I decided to leave out LRU in my most performing design.</p>
+<h5>Setup 2</h5>
+<ul>
+<li><strong>Data cache</strong> <em>cache size 64kB, 32B block size, 4-ways associative</em></li>
+<li><strong>Instruction cache</strong> <em>cache size 8kB, 32B blocks, 4-ways</em> associative</li>
+</ul>
+<p align="center">
+<img src="setup1.png" width="600">
+</p>
+<h5>Setup 2</h5>
+<ul>
+<li><strong>Data cache</strong> <em>cache size 16kB, 4B block size, 4-ways associative</em></li>
+<li><strong>Instruction cache</strong> <em>cache size 8kB, 32B blocks, 4-ways</em> associative</li>
+</ul>
+<p align="center">
+<img src="setup2.png" width="600">
+</p>
+</div>
+      </div>
+      
+      
+    
+    
+    
+    
+    
+    
+    
+    
+  
+    </body></html>
