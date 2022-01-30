@@ -41,8 +41,6 @@ def compute_speedup(inputs):
                 if s0 == "Cycles:":
                     cycles[sims.index(s)][inputs.index(i)] = float(s1)
 
-    print(cycles)
-
     for i in range(0, len(sims)):
         for j in range(0, len(inputs)):
             #print(cycles[i][j], cycles[0][j])
