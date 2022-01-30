@@ -1,5 +1,7 @@
 # Report Guillaume Thivolet - guillaume@glabs.ch
 
+<div style="text-align: justify">
+
 ## Experiment setup, benchmark generation
 
 I automated the benchmarking using python. Below is an explanation of all actions that are required to reproduce my work.
@@ -87,7 +89,7 @@ For each of those benchmarks, I generate 100 of them so that the benchmarking is
 
 For each parameter that I am testing, I ran both benchmarks' 100 programs generated and reported the average IPC in a bar chart. This will help in determining the sweet point of the curve.
 
-__In retrospective, it probably would have lead to more interesting results to add more diversified benchmarks (more than two types), but designing tests is very time-consuming and I will leave it for another time (or lab).__
+__In retrospective, it probably would have lead to more interesting results to add more diversified benchmarks (more than two types), but designing tests is very time-consuming and I will leave it for later (or another lab).__
 
 ### Benchmark program 1
 
@@ -112,12 +114,12 @@ loop:
     syscall
 ```
 
-It's generation can be found in `inputs/benchmarking/generate_benchmarks.py`.
+Generation details can be found in `inputs/benchmarking/generate_benchmarks.py`.
 
 ### Benchmark program 2
 
 The second program generate `n` random accesses in the memory and copies the accessed value in another array.
-The number of access is in the range of `[10;2000]`. Examples programs are longer than for the benchmark 1 as all the access are hard encoded and there's no loop. Below is an extract of a generated program.
+The number of access is in the range of `[10;2000]`. Examples programs are longer than for the benchmark 1 as all the access are hardcoded and there's no loop. Below is an extract of a generated program.
 
 ```asm
 .text
@@ -138,7 +140,7 @@ The number of access is in the range of `[10;2000]`. Examples programs are longe
     syscall
 ```
 
-It's generation can be found in `inputs/benchmarking/generate_benchmarks.py`.
+Generation details can be found in `inputs/benchmarking/generate_benchmarks.py`.
 
 ### Block size
 
@@ -167,8 +169,28 @@ For now, I would pick a cache of __64KB__.
 
 ![Associativity ](associativity.png)
 
-If we increment the associativity (more tags can be stored per each way), the performance improvement stalls after 2-ways for BM2 and BM1. Having a 1-way would be equivalent as a direct-mapped cache, and too many ways would require additional logic (more area-consuming logic on the die as well as more combinational logic). I would stick to a number between __between 4 and 16__, depending on the cache level.
+If we increment the associativity (more tags can be stored per set), the performance improvement stalls after 2 ways for BM2 and BM1. This is normal since for BM1 it uses two ways at most and the block size is the only parameter 
+
+The streaming pattern BM1 sees a performance improvement stall after 2 ways. This is because it loads in each set needs to be stored consecutively the load and store addresses. One way is clearly not enough as it needs to reload the block after each load or store. After 2 ways, not much can be done except than having a larger block size to improve performance as it will anyway need to reach the next set. BM2 analysis is exactly the same as for BM1.
+
+Only one 1-way would be equivalent to a direct-mapped cache,  and too many ways would require additional logic (more area-consuming logic on the die as well as more combinational logic). I would stick to a number between __between 4 and 16__, depending on the cache level.
 
 ## Cache replacement policy exploration
 
-TBD LATER (as of 08.10.2021).
+The following policies have been tested:
+
+- Least-Recently Used (LRU)
+- Random Replacement
+- Most-recently Used (MRU)
+- FIFO
+
+For each of them I ran a simulation on some benchmarks provided, a few of , to see if it affected any of the workloads. The baseline was LRU. The graph below shows the average cycles speedup for each program. 
+
+My conclusion is that LRU is the best amongst the one tested.
+
+Setup  1 (Cache size 64kB, 32B block size, 4-ways associative)
+
+![Associativity ](associativity.png)
+Setup  2 (Cache size 16kB, 4B block size, 4-ways associative) 
+
+</div>
