@@ -16,17 +16,17 @@ def gen_bm_1(name):
 
 # associativity 32B blocks 64kB cache
 def gen_bm_2(name):
-    itr = random.randint(200, 3000)
+    itr = random.randint(10, 2000)
     l_adds = [random.randint(0, itr) for i in range(itr)]
     s_adds = [random.randint(0, itr) for i in range(itr)]
     f = open(name, "w")
     f.write(".text\n    lui $s0, 0x1000\n    lui $s1, 0x3000\n")
     for l_add, s_add in zip(l_adds, s_adds):
         f.write("    addiu $s2, $s0" +
-                hex(512*random.randint(0, 64) + 4*l_add) + "\n")
+                hex(4*l_add) + "\n")
         f.write("    lw $t0, 0($s2)\n")
         f.write("    addiu $s2, $s1" +
-                hex(512*random.randint(0, 64) + 4*s_add) + "\n")
+                hex(4*s_add) + "\n")
         f.write("    sw $t0, 0($s2)\n")
     f.write("    addiu $v0, $0, 10\n    syscall\n")
     f.close()
@@ -126,16 +126,17 @@ os.mkdir(bm3_dir)
 os.mkdir(bm4_dir)
 os.mkdir(bm5_dir)
 os.mkdir(bm6_dir)
-""" 
+
 for i in range(100):
     gen_bm_1(bm1_dir + "/test" + str(i) + ".s")
     gen_bm_2(bm2_dir + "/test" + str(i) + ".s")
     gen_bm_3(bm3_dir + "/test" + str(i) + ".s")
 
-for i in range(3):
+""" for i in range(3):
     gen_bm_4(bm4_dir + "/test" + str(i) + ".s")
 
  """
-for i in range(100):
+""" for i in range(100):
     gen_bm_5(bm5_dir + "/test" + str(i) + ".s")
     gen_bm_6(bm6_dir + "/test" + str(i) + ".s")
+ """
