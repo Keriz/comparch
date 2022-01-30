@@ -494,7 +494,7 @@ For a fixed 8-ways configuration, and 32B of block size, there is no improvement
 <p>It hard to attain a conclusion from the plots as we see no difference with LRU for most of the simulations (accesses being mostly random and never targeting more than once the same cache block).</p>
 <p>It is important to note that MRU reaches the best speedup (37.1%) in the case of BM4 in both setup 1 and 2, due to the pattern access which reaccesses older elements sparsely enough to gain benefit from MRU. As BM3 is a variation of BM4 which focused towards the testing of cache policy, so it is normal that the speedup is slightly less for BM3 than for BM4.</p>
 <p>For future work, testing more programs would probably lead to different conclusion for the cache policies (ie. instruction cache focused), so I decided to leave out LRU in my most performing design.</p>
-<h5>Setup 2</h5>
+<h5>Setup 1</h5>
 <ul>
 <li><strong>Data cache</strong> <em>cache size 64kB, 32B block size, 4-ways associative</em></li>
 <li><strong>Instruction cache</strong> <em>cache size 8kB, 32B blocks, 4-ways</em> associative</li>

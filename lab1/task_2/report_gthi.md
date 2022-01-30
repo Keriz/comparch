@@ -327,7 +327,7 @@ It is important to note that MRU reaches the best speedup (37.1%) in the case of
 For future work, testing more programs would probably lead to different conclusion for the cache policies (ie. instruction cache focused), so I decided to leave out LRU in my most performing design.
 
 
-##### Setup 2 
+##### Setup 1
 - **Data cache** *cache size 64kB, 32B block size, 4-ways associative*
 - **Instruction cache** *cache size 8kB, 32B blocks, 4-ways* associative 
 
