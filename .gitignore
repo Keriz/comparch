@@ -34,3 +34,12 @@ Lab4/obj
 lab2/*.exe
 .vscode/launch.json
 
+lab1/task_2/dc_associativity.png
+lab1/task_2/dc_blocksize.png
+lab1/task_2/dc_cachesize.png
+lab1/task_2/ic_associativity.png
+lab1/task_2/ic_blocksize.png
+lab1/task_2/ic_cachesize.png
+lab1/inputs/benchmarking/ic_associativity.png
+lab1/inputs/benchmarking/ic_blocksize.png
+lab1/inputs/benchmarking/ic_cachesize.png
