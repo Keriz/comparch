@@ -132,11 +132,10 @@ for i in range(100):
     gen_bm_2(bm2_dir + "/test" + str(i) + ".s")
     gen_bm_3(bm3_dir + "/test" + str(i) + ".s")
 
-""" for i in range(3):
+
+for i in range(3):
     gen_bm_4(bm4_dir + "/test" + str(i) + ".s")
 
- """
-""" for i in range(100):
+for i in range(100):
     gen_bm_5(bm5_dir + "/test" + str(i) + ".s")
     gen_bm_6(bm6_dir + "/test" + str(i) + ".s")
- """
