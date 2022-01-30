@@ -29,10 +29,10 @@ for input in glob.glob("*.stats"):
                 it = [float(s) for s in row.split() if is_float(s)]
                 if "Cap" in fields[1]:
                     it_measurements[mapping_pname["FRFCFS_Cap"]
-                                    ][mapping_workload[fields[2]]] = it[0]
+                                    ][mapping_workload[fields[2]]] = round(it[0], 3)
                 else:
                     it_measurements[mapping_pname[fields[0]]
-                                    ][mapping_workload[fields[1]]] = it[0]
+                                    ][mapping_workload[fields[1]]] = round(it[0], 3)
 
 
 alone_H = [32102297, 31695820, 31695820, 32091700, 32091700]
@@ -66,7 +66,7 @@ for input in glob.glob("*.stats"):
                     max_slowdown = max(
                         cycles / alone_L[mapping_pname[plcy]], max_slowdown)
     ms_measurements[mapping_pname[plcy]
-                    ][mapping_workload[workloads]] = max_slowdown
+                    ][mapping_workload[workloads]] = round(max_slowdown, 3)
 
 
 labels = ['HLLL', 'HHLL', 'HHHH', 'HHHHHHHH']
@@ -74,7 +74,7 @@ labels = ['HLLL', 'HHLL', 'HHHH', 'HHHHHHHH']
 x = np.arange(len(labels))  # the label locations
 width = 0.25  # the width of the bars
 
-""" fig, ax = plt.subplots()
+fig, ax = plt.subplots()
 rects1 = ax.bar(x - width, it_measurements[0], width*0.3, label='FCFS')
 rects2 = ax.bar(x - width/2, it_measurements[1], width*0.3, label='FRFCFS')
 rects3 = ax.bar(x, it_measurements[2], width*0.3, label='FRFCFS_Cap')
@@ -84,14 +84,20 @@ rects5 = ax.bar(x + width, it_measurements[4], width*0.3, label='BLISS')
 # Add some text for labels, title and custom x-axis tick labels, etc.
 ax.set_ylabel('Instruction throughput')
 ax.set_xlabel('Workload')
+ax.set(ylim=(0, 12))
 ax.set_title('Metrics of instruction throughput for different policies')
 ax.set_xticks(x)
 ax.set_xticklabels(labels)
+ax.bar_label(rects1, padding=3, rotation='vertical')
+ax.bar_label(rects2, padding=3, rotation='vertical')
+ax.bar_label(rects3, padding=3, rotation='vertical')
+ax.bar_label(rects4, padding=3, rotation='vertical')
+ax.bar_label(rects5, padding=3, rotation='vertical')
 ax.legend()
 
 fig.tight_layout()
 
-plt.savefig("instruction_throughput.png") """
+plt.savefig("instruction_throughput.png")
 
 
 fig, ax = plt.subplots()
@@ -101,10 +107,16 @@ rects3 = ax.bar(x, ms_measurements[2], width*0.3, label='FRFCFS_Cap')
 rects4 = ax.bar(x + width/2, ms_measurements[3], width*0.3, label='ATLAS')
 rects5 = ax.bar(x + width, ms_measurements[4], width*0.3, label='BLISS')
 ax.set_ylabel('Maximum slowdown')
+ax.set(ylim=(0, 16))
 ax.set_xlabel('Workload')
 ax.set_title('Maximum slowdown of applications for different policies')
 ax.set_xticks(x)
 ax.set_xticklabels(labels)
+ax.bar_label(rects1, padding=3, rotation='vertical')
+ax.bar_label(rects2, padding=3, rotation='vertical')
+ax.bar_label(rects3, padding=3, rotation='vertical')
+ax.bar_label(rects4, padding=3, rotation='vertical')
+ax.bar_label(rects5, padding=3, rotation='vertical')
 ax.legend()
 
 plt.savefig("maximum_slowdown.png")
