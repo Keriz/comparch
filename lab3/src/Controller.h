@@ -308,7 +308,6 @@ class Controller {
 			return false;
 
 		req.arrive = clk;
-		local_las_ranks[req.coreid]++;
 
 		queue.q.push_back(req);
 		// shortcut for read requests, if a write to same addr exists
@@ -474,6 +473,7 @@ class Controller {
 		}
 
 		// remove request from queue
+		local_las_ranks[req->coreid]++;
 		queue->q.erase(req);
 	}
 

@@ -107,6 +107,7 @@ class Memory : public MemoryBase {
 	int num_cores;
 	vector<int> meta_las_ranks;
 	long quantum_length = 10000000;
+	float alpha         = 0.875;
 
 	long cycles = 0;
 
@@ -283,13 +284,20 @@ class Memory : public MemoryBase {
 		in_queue_write_req_num_sum += cur_que_writereq_num;
 
 		if ((cycles % quantum_length) == 0) {
-			meta_las_ranks.resize(num_cores, 0);
+			vector<int> tmp_ranks;
+			tmp_ranks.resize(num_cores, 0);
+
 			for (auto ctrl : ctrls) {
 				for (int i = 0; i < ctrl->local_las_ranks.size(); i++) {
-					meta_las_ranks[i] += ctrl->local_las_ranks[i];
+					tmp_ranks[i] += ctrl->local_las_ranks[i];
 					ctrl->local_las_ranks[i] = 0;
 				}
 			}
+
+			for (size_t i = 0; i < num_cores; i++) {
+				meta_las_ranks[i] = meta_las_ranks[i] * alpha + (1 - alpha) * tmp_ranks[i];
+			}
+
 			for (auto ctrl : ctrls) {
 				ctrl->meta_las_ranks = meta_las_ranks;
 			}

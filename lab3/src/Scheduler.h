@@ -76,13 +76,12 @@ class Scheduler {
 		ATLAS,
 		BLISS,
 		MAX
-	} type = Type::FCFS; //Change this line to change scheduling policy
+	} type = Type::ATLAS; //Change this line to change scheduling policy
 
 	long cap = 16; //Change this line to change cap
 
 	/* (i.e.,quantum length = 10 million cycles, alpha = 0.875, and T = 100K cycles). */
 	int threshold = 100000;
-	float alpha   = 0.875;
 
 	Scheduler(Controller<T> *ctrl) : ctrl(ctrl) {}
 
@@ -225,10 +224,14 @@ class Scheduler {
 		*/
 
 	    [this](ReqIter req1, ReqIter req2) {
-		    bool overThreshold1 = req1->arrive > threshold;
-		    bool overThreshold2 = req2->arrive > threshold;
+		    bool overThreshold1 = (this->ctrl->clk - req1->arrive) > threshold;
+		    bool overThreshold2 = (this->ctrl->clk - req2->arrive) > threshold;
 
-		    if (overThreshold1 ^ overThreshold2) {
+		    if (overThreshold1 && overThreshold2) {
+			    if (req1->arrive < req2->arrive)
+				    return req1;
+			    return req2;
+		    } else if (overThreshold1 ^ overThreshold2) {
 			    if (overThreshold1)
 				    return req1;
 			    return req2;
