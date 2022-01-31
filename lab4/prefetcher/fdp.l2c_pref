@@ -1,11 +1,11 @@
 //
-// Guillaume Thivolet, GHB Prefetcher Implementation
+// Guillaume Thivolet Implementation
 //
 
 /*
 
-  This file describes an Instruction Pointer-based (Program Counter-based) stride prefetcher.  
-  The prefetcher detects stride patterns coming from the same IP, and then 
+  This file describes an Instruction Pointer-based (Program Counter-based) stride prefetcher.
+  The prefetcher detects stride patterns coming from the same IP, and then
   prefetches additional cache lines.
 
   Prefetches are issued into the L2 or LLC depending on L2 MSHR occupancy.
@@ -35,13 +35,13 @@ typedef struct aggressiveness {
 	uint8_t degree;
 } Pref_Aggr;
 
-//DISTANCE, DEGREE
+// DISTANCE, DEGREE
 Pref_Aggr pref_aggressiveness[5] = {
-    {4, 1},  //Very Conservative
-    {8, 1},  //Conservative
-    {16, 2}, //Middle-of-the-Road
-    {32, 4}, //Aggressive
-    {48, 4}  //Very aggressive
+    {4, 1},  // Very Conservative
+    {8, 1},  // Conservative
+    {16, 2}, // Middle-of-the-Road
+    {32, 4}, // Aggressive
+    {48, 4}  // Very aggressive
 };
 
 uint16_t GHB_index  = 0;
@@ -76,8 +76,8 @@ uint32_t CACHE::l2c_prefetcher_operate(uint64_t addr, uint64_t ip, uint8_t cache
 
 			pref_accuracy = (double)((double)used_total / (double)pref_total);
 			pref_lateness = (double)((double)late_pref / (double)used_total);
-			printf("pref_accuracy= %f\n", pref_accuracy);
-			printf("pref_lateness= %f\n", pref_lateness);
+			// printf("pref_accuracy= %f\n", pref_accuracy);
+			// printf("pref_lateness= %f\n", pref_lateness);
 
 			if (pref_accuracy > PREF_ACCUR_HIGH) {
 				if (pref_lateness > PREF_LATENESS_LATE)
@@ -114,14 +114,14 @@ uint32_t CACHE::l2c_prefetcher_operate(uint64_t addr, uint64_t ip, uint8_t cache
 			index_table[i].ghb_entry = GHB_INVALID_ENTRY;
 	}
 
-	//its link entry is given the current value in the Index
+	// its link entry is given the current value in the Index
 	gh_buffer[GHB_index].prev_entry = index_table[ip_mask].ghb_entry;
 	index_table[ip_mask].ghb_entry  = GHB_index;
 
 	uint64_t last_access[3] = {0};
 
 	last_access[0] = gh_buffer[GHB_index].cl;
-	//printf("GHB_Index%d, prev:%d\n", GHB_index, gh_buffer[GHB_index].prev_entry);
+	// printf("GHB_Index%d, prev:%d\n", GHB_index, gh_buffer[GHB_index].prev_entry);
 
 	if (gh_buffer[GHB_index].prev_entry != GHB_INVALID_ENTRY) {
 		last_access[1] = gh_buffer[gh_buffer[GHB_index].prev_entry].cl;
@@ -138,7 +138,7 @@ uint32_t CACHE::l2c_prefetcher_operate(uint64_t addr, uint64_t ip, uint8_t cache
 
 	GHB_index = (GHB_index + 1) % GHB_SIZE;
 
-	//take difference between two consecutive addresses
+	// take difference between two consecutive addresses
 	int64_t previous_stride = 0;
 
 	for (size_t i = 0; i < 2; i++) {
@@ -151,7 +151,7 @@ uint32_t CACHE::l2c_prefetcher_operate(uint64_t addr, uint64_t ip, uint8_t cache
 		}
 
 		if (previous_stride == stride) {
-			//issue prefetch request to cache line A + ld
+			// issue prefetch request to cache line A + ld
 			for (size_t i = 0; i < pref_aggressiveness[pref_aggr_cntr].degree; i++) {
 
 				uint64_t pf_address = (cl_addr + pref_aggressiveness[pref_aggr_cntr].distance * (stride * (i + 1))) << LOG2_BLOCK_SIZE;
@@ -180,7 +180,7 @@ uint32_t CACHE::l2c_prefetcher_cache_fill(uint64_t addr, uint32_t set, uint32_t 
 			pref_addresses.erase(pref_addresses.begin() + i);
 			break;
 		} else if (pref_addresses[i] == addr) {
-			//printf("used\n");
+			// printf("used\n");
 			pref_addresses.erase(pref_addresses.begin() + i);
 			used_total++;
 			break;
@@ -188,9 +188,9 @@ uint32_t CACHE::l2c_prefetcher_cache_fill(uint64_t addr, uint32_t set, uint32_t 
 	}
 
 	/* 	for (size_t i = 0; i < pref_addresses.size(); i++)
-		if (pref_addresses[i] == addr) {
-		
-		} */
+	        if (pref_addresses[i] == addr) {
+
+	        } */
 
 	return metadata_in;
 }

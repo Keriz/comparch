@@ -65,7 +65,7 @@ uint32_t CACHE::l2c_prefetcher_operate(uint64_t addr, uint64_t ip, uint8_t cache
 	uint64_t last_access[3] = {0};
 
 	last_access[0] = gh_buffer[GHB_index].cl;
-	printf("GHB_Index%d, prev:%d\n", GHB_index, gh_buffer[GHB_index].prev_entry);
+	// printf("GHB_Index%d, prev:%d\n", GHB_index, gh_buffer[GHB_index].prev_entry);
 
 	if (gh_buffer[GHB_index].prev_entry != GHB_INVALID_ENTRY) {
 		last_access[1] = gh_buffer[gh_buffer[GHB_index].prev_entry].cl;
