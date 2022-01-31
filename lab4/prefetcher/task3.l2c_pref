@@ -1,0 +1,262 @@
+#include "cache.h"
+#include <vector>
+
+//https://webs.um.es/aros/papers/pdfs/aros-dpc19.pdf
+//Designed by Alberto Ros
+//Implemented by Guillaume Thivolet
+
+typedef struct current_page_entry_t {
+	uint64_t page_addr;
+	uint16_t first_ip;
+	bool accessed_cache_lines[64];
+	uint8_t first_access_offset;
+	int berti_deltas[10]; //because can be negative
+	uint8_t deltas_counters[10];
+	uint8_t current_burst_offset;
+	uint64_t recency;
+} current_page_entry;
+
+typedef struct previous_demand_request_t {
+	uint64_t page_addr;
+	uint8_t cacheline_offset;
+	uint16_t issue_time;
+	current_page_entry *entry = NULL;
+} Prev_demand_req;
+
+typedef struct recorded_pages_t {
+	uint32_t page_addr;
+	bool accessed_cache_lines[64];
+	uint8_t first_access_offset;
+	int berti_delta; //can be negative
+	uint64_t recency;
+} Record_pages;
+
+/* typedef struct previous_prefetch_request_t {
+	uint64_t page_address;
+	uint8_t cacheline_offset;
+	uint8_t issueTime;
+	uint8_t completed_bit; //in this case, issueTime stores the time that the prefetch required to be resolved
+} Prev_pref_req; */
+
+typedef struct IP_t {
+	/* 	int16_t berti_delta       = 0;
+	bool d_or_p               = 0; // 1 = holds pointer to current_page, 0= holds berti delta
+	uint8_t stride            = 0;
+	bool accessed_more_2_cl   = 0; */
+	void *entry = NULL;
+} IP;
+
+#define NB_IP_ENTRIES (1 << 10)
+#define NB_RT_ENTRIES ((1 << 9) + (1 << 8))
+#define NB_CP_ENTRIES (1 << 6)
+#define NB_DR_ENTRIES (1 << 10)
+
+void *ip_table[NB_IP_ENTRIES];
+Record_pages recorded_pages[NB_RT_ENTRIES];
+Prev_demand_req pdr_table[NB_DR_ENTRIES];
+current_page_entry current_pages[NB_CP_ENTRIES];
+
+void CACHE::l2c_prefetcher_initialize() {
+	//initialize ACL
+}
+
+size_t cp_get_lru() {
+	for (size_t i = 0; i < NB_CP_ENTRIES; i++) {
+		if (current_pages.recency == 0) {
+			return i;
+		}
+	}
+}
+
+size_t rp_get_lru() {
+	for (size_t i = 0; i < NB_RP_ENTRIES; i++) {
+		if (recorded_pages.recency == 0) {
+			return i;
+		}
+	}
+}
+
+void update_cp_lru(size_t index) {
+	current_pages[index].recency = NB_CP_ENTRIES - 1;
+	for (size_t i = 0; i < NB_CP_ENTRIES; i++) {
+		if (i == index) continue;
+		current_pages[index].recency--;
+		if (current_pages[index].recency >= NB_CP_ENTRIES)
+			current_pages[index].recency = 0;
+	}
+}
+
+void update_rp_lru(size_t index) {
+	recorded_pages[index].recency = NB_RT_ENTRIES - 1;
+	for (size_t i = 0; i < NB_RT_ENTRIES; i++) {
+		if (i == index) continue;
+		recorded_pages[index].recency--;
+		if (recorded_pages[index].recency >= NB_RT_ENTRIES)
+			recorded_pages[index].recency = 0;
+	}
+}
+
+void insert_recorded_page(size_t cp_index) {
+	uint64_t lru = rp_get_lru();
+	update_rp_lru();
+
+	recorded_pages[lru].page_addr = current_pages[cp_index].page_addr;
+	//recorded_pages[position].berti_delta = 0;
+	uint8_t delta = 0;
+	for (size_t i = 0; i < 10; i++) {
+		if (delta < current_pages[cp_index].berti_deltas[i])
+			delta = current_pages[cp_index].berti_deltas[i];
+	}
+
+	recorded_pages[lru].berti_delta         = delta;
+	recorded_pages[lru].first_access_offset = current_pages[cp_index].first_access_offset;
+
+	for (size_t i = 0; i < 64; i++) {
+		recorded_pages[lru].accessed_cache_lines[i] = current_pages[cp_index].accessed_cache_lines[i];
+	}
+}
+
+bool match_page_addr_fa_offset(uint32_t pg_addr, uint8_t pg_offset) {
+	for (size_t i = 0; i < NB_RT_ENTRIES; i++) {
+		if (recorded_pages[i].first_access_offset == pg_offset && recorded_pages[i].page_addr == pg_addr)
+			return 1;
+	}
+	return 0;
+}
+
+bool match_ip_fa_offset(uint32_t ip, uint8_t pg_offset, uint16_t cp_index) {
+	for (size_t i = 0; i < NB_RT_ENTRIES; i++) {
+		//TODO: check this condition, section 2.2.1 is not clear..
+		if ((recorded_pages[i].first_access_offset == pg_offset) && (ip_table[ip] == &current_pages[cp_index]))
+			return 1;
+	}
+	return 0;
+}
+
+uint32_t CACHE::l2c_prefetcher_operate(uint64_t addr, uint64_t ip, uint8_t cache_hit, uint8_t type, uint32_t metadata_in) {
+	uint64_t cl_addr   = addr >> LOG2_BLOCK_SIZE;
+	uint64_t pg_addr   = addr >> LOG2_PAGE_SIZE;
+	uint64_t pg_offset = (addr & ((1 << LOG2_PAGE_SIZE) - 1)) >> LOG2_BLOCK_SIZE;
+	uint64_t ip_mask   = ip & (NB_IP_ENTRIES - 1);
+	size_t mru_cp      = 0;
+
+	//get page index in current_page_table (section II.B)
+	bool in_cpt = 0;
+	for (size_t i = 0; i < NB_IP_ENTRIES; i++) {
+		if (current_pages[i].page_addr == pg_addr) {
+			update_cp_lru(i);
+			in_cpt                        = 1;
+			mru_cp                        = i;
+			ip[current_pages[i].first_ip] = &current_pages[i];
+		}
+	}
+
+	//if not in current_page table, add it
+	size_t lru_cp = cp_get_lru();
+	if (!in_cpt) {
+		size_t lru_rp = rp_get_lru();
+
+		//evict the cp_lru to the recorded_pages table
+		insert_recorded_page(lru_cp);
+
+		update_rp_lru(lru_rp);
+		lru_rp = rp_get_lru();
+
+		//all IPs previously poiting on the hot page need to be on the cold one
+		if (ip_table[i] == &current_pages[lru_cp])
+			for (size_t i = 0; i < NB_IP_ENTRIES; i++) {
+				ip_table[i] = &recorded_pages[lru_rp];
+			}
+		update_cp_lru(lru_cp);
+
+		mru_cp = lru_cp;
+
+		current_pages[mru_cp].page_addr = pg_addr;
+		current_pages[mru_cp].first_ip  = ip_mask;
+		ip_table[ip_mask]               = &current_pages[mru_cp];
+		for (size_t i = 0; i < 64; i++) {
+			current_pages[mru_cp].accessed_cache_lines[i] = 0;
+		}
+
+		for (size_t i = 0; i < 10; i++) {
+			current_pages[mru_cp].berti_deltas    = 0;
+			current_pages[mru_cp].deltas_counters = 0;
+		}
+
+		current_pages[mru_cp].first_access_offset  = pg_offset;
+		current_pages[mru_cp].current_burst_offset = 0;
+	}
+
+	current_pages[mru_cp].accessed_cache_lines[pg_offset] = 1;
+
+	//issuing prefetch
+
+	bool burst = 1, prefetching = 0;
+	int berti = 0;
+
+	if (match_page_addr_fa_offset(pg_addr, pg_offset)) { //match page addr and first accessed offset in recorded pages
+		burst       = 0;
+		prefetching = 1;
+	} else if (match_ip_fa_offset(ip_mask, pg_offset, mru_cp)) {
+		burst       = 0;
+		prefetching = 1;
+	} else {
+		//check current pages table, and look for berti delta
+		uint8_t tmp_cntr = 0, tmp_index = 0;
+		for (size_t i = 0; i < 10; i++) {
+			if (current_pages[mru_cp].deltas_counters[i] > tmp_cntr) {
+				tmp_cntr  = current_pages[mru_cp].deltas_counters[i];
+				tmp_index = i;
+			}
+		}
+
+		//if counter gives confidence (more than 2 blocks find the same berti delta), then use berti delta of current page
+		if (tmp_cntr >= 2) { // section 2.2.1
+			prefetching = 1;
+			burst       = 0;
+			berti       = current_pages[mru_cp].berti_deltas[tmp_index];
+		} else {
+			//iterate recorded pages table and look for the most recent entry
+			uint32_t tmp_recency = 0, rec_index = 0;
+			bool match = 0;
+			for (size_t i = 0; i < NB_RT_ENTRIES; i++) {
+				if (recorded_pages[i].page_addr == pg_addr) {
+					if (recorded_pages[i].recency > tmp_recency) {
+						tmp_recency = recorded_pages[i].recency;
+						rec_index   = i;
+					}
+					match = 1;
+				}
+			}
+
+			if (match) {
+				prefetching = 1;
+				burst       = 0;
+			} else { //if mismatch, try to find recorded pages with IP table
+				//TODO: clarify end of section 2.2.1, because it seems that if we have no match there's no entry in the recorded pages table anyways
+
+				//if mismatch and nothing found, no prefetching(=0 by default)!
+				{
+					prefetching = 0;
+				}
+			}
+			burst = 0;
+			//
+		}
+	}
+
+	if (burst && prefetching) { //burst mode
+		                    // Only the blocks that where accessed previously by the page are prefetched
+
+	} else if (prefetching) { //berti prefetch
+	}
+
+	return metadata_in;
+}
+
+uint32_t CACHE::l2c_prefetcher_cache_fill(uint64_t addr, uint32_t set, uint32_t way, uint8_t prefetch, uint64_t evicted_addr, uint32_t metadata_in) {
+	return metadata_in;
+}
+
+void CACHE::l2c_prefetcher_final_stats() {
+}
