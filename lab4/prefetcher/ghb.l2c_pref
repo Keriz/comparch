@@ -1,0 +1,125 @@
+//
+// Guillaume Thivolet, GHB Prefetcher Implementation
+//
+
+/*
+
+  This file describes an Instruction Pointer-based (Program Counter-based) stride prefetcher.
+  The prefetcher detects stride patterns coming from the same IP, and then
+  prefetches additional cache lines.
+
+  Prefetches are issued into the L2 or LLC depending on L2 MSHR occupancy.
+
+ */
+
+#include "cache.h"
+
+#define GHB_SIZE           256
+#define IT_SIZE            256
+#define PREFETCH_DEGREE    4
+#define PREFETCH_LOOKAHEAD 4
+
+#define GHB_INVALID_ENTRY -1
+
+typedef struct GHB_t {
+	uint64_t cl        = 0;
+	int16_t prev_entry = 0;
+} GHB;
+
+uint16_t GHB_index = 0;
+
+typedef struct It_t {
+	int16_t ghb_entry = 0;
+} IT;
+
+GHB gh_buffer[256];
+IT index_table[256];
+
+void CACHE::l2c_prefetcher_initialize() {
+	cout << "CPU " << cpu << " L2C IP-based stride prefetcher" << endl;
+	for (size_t i = 0; i < 256; i++) {
+		index_table[i].ghb_entry = GHB_INVALID_ENTRY;
+		gh_buffer[i].prev_entry  = GHB_INVALID_ENTRY;
+	}
+}
+
+uint32_t CACHE::l2c_prefetcher_operate(uint64_t addr, uint64_t ip, uint8_t cache_hit, uint8_t type, uint32_t metadata_in) {
+	// check for a tracker hit
+	uint64_t cl_addr = addr >> LOG2_BLOCK_SIZE;
+	uint64_t ip_mask = ip & 0xff;
+	// uint64_t ip_tag  = (ip >> 2) & 0xff;
+
+	gh_buffer[GHB_index].cl = cl_addr;
+
+	for (size_t i = 0; i < 256; i++) {
+		if (gh_buffer[i].prev_entry == GHB_index)
+			gh_buffer[i].prev_entry = GHB_INVALID_ENTRY;
+		if (index_table[i].ghb_entry == GHB_index)
+			index_table[i].ghb_entry = GHB_INVALID_ENTRY;
+	}
+
+	// its link entry is given the current value in the Index
+	gh_buffer[GHB_index].prev_entry = index_table[ip_mask].ghb_entry;
+	index_table[ip_mask].ghb_entry  = GHB_index;
+
+	uint64_t last_access[3] = {0};
+
+	last_access[0] = gh_buffer[GHB_index].cl;
+	printf("GHB_Index%d, prev:%d\n", GHB_index, gh_buffer[GHB_index].prev_entry);
+
+	if (gh_buffer[GHB_index].prev_entry != GHB_INVALID_ENTRY) {
+		last_access[1] = gh_buffer[gh_buffer[GHB_index].prev_entry].cl;
+		if (gh_buffer[gh_buffer[GHB_index].prev_entry].prev_entry != GHB_INVALID_ENTRY)
+			last_access[2] = gh_buffer[gh_buffer[gh_buffer[GHB_index].prev_entry].prev_entry].cl;
+		else {
+			GHB_index = (GHB_index + 1) % GHB_SIZE;
+			return metadata_in;
+		}
+	} else {
+		GHB_index = (GHB_index + 1) % GHB_SIZE;
+		return metadata_in;
+	}
+
+	GHB_index = (GHB_index + 1) % GHB_SIZE;
+
+	// take difference between two consecutive addresses
+	int64_t previous_stride = 0;
+
+	for (size_t i = 0; i < 2; i++) {
+		int64_t stride = 0;
+		if ((last_access[i] - last_access[i + 1]) > 0)
+			stride = last_access[i] - last_access[i + 1];
+		else {
+			stride = last_access[i + 1] - last_access[i];
+			stride *= -1;
+		}
+
+		if (previous_stride == stride) {
+			// issue prefetch request to cache line A + ld
+			for (size_t i = 0; i < PREFETCH_DEGREE; i++) {
+
+				uint64_t pf_address = (cl_addr + PREFETCH_LOOKAHEAD * (stride * (i + 1))) << LOG2_BLOCK_SIZE;
+
+				// only issue a prefetch if the prefetch address is in the same 4 KB page
+				// as the current demand access address
+				if ((pf_address >> LOG2_PAGE_SIZE) != (addr >> LOG2_PAGE_SIZE))
+					break;
+
+				prefetch_line(ip, addr, pf_address, FILL_L2, 0);
+			}
+		}
+
+		previous_stride = stride;
+	}
+
+	////////////////////////
+	return metadata_in;
+}
+
+uint32_t CACHE::l2c_prefetcher_cache_fill(uint64_t addr, uint32_t set, uint32_t way, uint8_t prefetch, uint64_t evicted_addr, uint32_t metadata_in) {
+	return metadata_in;
+}
+
+void CACHE::l2c_prefetcher_final_stats() {
+	cout << "CPU " << cpu << " LLC PC-based stride prefetcher final stats" << endl;
+}
