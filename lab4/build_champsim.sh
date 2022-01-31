@@ -120,7 +120,7 @@ echo "Binary: bin/${BINARY_NAME}"
 echo ""
 mv bin/champsim bin/${BINARY_NAME}
 echo "${NORMAL}"
-./run_champsim.sh bin/perceptron-no-ghb_stride-no-ship-1core 1 1 traces/462.libquantum-714B.champsimtrace.xz
+#./run_champsim.sh bin/perceptron-no-ghb_stride-no-ship-1core 1 1 traces/462.libquantum-714B.champsimtrace.xz
 
 
 # Restore to the default configuration
